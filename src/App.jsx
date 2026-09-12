@@ -18,13 +18,19 @@ function ProtectedRoute({children}) {
   return isAuthenticated ? children : <Navigate to="/login" />
 }
 
+function GuestRoute({children}) {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  return isAuthenticated ? <Navigate to={"/dashboard"} /> : children;
+}
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path='/' element={<Home />} />
-        <Route path='/login' element={<Login />} />
-        <Route path='/register' element={<Register />} />
+        <Route path='/login' element={<GuestRoute><Login /></GuestRoute>} />
+        <Route path='/register' element={<GuestRoute><Register /></GuestRoute>} />
         <Route path='/join' element={<Lobby />} />
         <Route path='/play/:pin' element={<PlayerGame />} />
         <Route path='/results/:pin' element={<Results />} />
