@@ -11,6 +11,8 @@ const useGameStore = create((set) => ({
     timeRemaining: 0,
     players: [],
     leaderboard: [],
+    answeredCount: 0,
+    lastAnswerResult: null,
 
     setPinCode: (pin) => set({ pinCode: pin }),
     setNickname: (name) => set({ nickname: name }),
@@ -21,9 +23,12 @@ const useGameStore = create((set) => ({
     setTimer: (seconds) => set({ timeRemaining: seconds }),
     setPlayers: (players) => set({ players }),
     setLeaderboard: (scores) => set({ leaderboard: scores }),
+    setAnsweredCount: (count) => set({ answeredCount: count }),
+    setLastAnswerResult: (result) => set({ lastAnswerResult: result }),
     reset: () => set({
       pinCode: null, nickname: null, playerId: null, isHost: false,
-      status: 'idle', currentQuestion: null, timeRemaining: 0
+      status: 'idle', currentQuestion: null, timeRemaining: 0,
+      players: [], leaderboard: [], answeredCount: 0, lastAnswerResult: null
     })
 }));
 

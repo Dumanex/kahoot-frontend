@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import useAuthStore from "../stores/authStore";
 import { deleteQuiz, getQuizzes } from "../api/quizApi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import QuizCard from "../components/quiz/QuizCard";
+import useGameStore from "../stores/gameStore";
+import { createSession } from "../api/gameApi";
 
 function Dashboard() {
     const [quizzes, setQuizzes] = useState([]);
     const [error, setError] = useState('');
     const logout = useAuthStore((state) => state.logout);
+    const resetGame = useGameStore((state) => state.reset);
+    const navigate = useNavigate();
 
     const loadQuizzes = async () => {
         try {
@@ -33,6 +37,17 @@ function Dashboard() {
         }
     };
 
+    const handleHost = async (quizId) => {
+          setError('');
+          try {
+              const response = await createSession(quizId);
+              resetGame();
+              navigate(`/host/${response.data.pinCode}`);
+          } catch (err) {
+              setError("Neuspešno pokretanje igre");
+          }
+      };
+
     return (
         <div>
             <h1>Moji kvizovi</h1>
@@ -44,7 +59,7 @@ function Dashboard() {
             {quizzes.length === 0 && <p>Nemaš još nijedan kviz</p>}
 
             {quizzes.map((quiz) => (
-                <QuizCard key={quiz.id} quiz={quiz} onDelete={handleDelete} />
+                <QuizCard key={quiz.id} quiz={quiz} onDelete={handleDelete} onHost={handleHost} />
             ))}
         </div>
     );

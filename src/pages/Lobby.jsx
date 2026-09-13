@@ -12,6 +12,7 @@ function Lobby() {
     const navigate = useNavigate();
     const setPinCode = useGameStore((state) => state.setPinCode);
     const setNicknameInStore = useGameStore((state) => state.setNickname);
+    const resetGame = useGameStore((state) => state.reset);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -29,6 +30,7 @@ function Lobby() {
                 return;
             }
 
+            resetGame();
             setPinCode(pin);
             setNicknameInStore(nickname);
             navigate(`/play/${pin}`);
