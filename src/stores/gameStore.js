@@ -13,6 +13,7 @@ const useGameStore = create((set) => ({
     leaderboard: [],
     answeredCount: 0,
     lastAnswerResult: null,
+    roundResults: [],
 
     setPinCode: (pin) => set({ pinCode: pin }),
     setNickname: (name) => set({ nickname: name }),
@@ -25,10 +26,15 @@ const useGameStore = create((set) => ({
     setLeaderboard: (scores) => set({ leaderboard: scores }),
     setAnsweredCount: (count) => set({ answeredCount: count }),
     setLastAnswerResult: (result) => set({ lastAnswerResult: result }),
+    addRoundResult: (result) => set((state) => ({
+      roundResults: [...state.roundResults.filter((r) => r.playerId !== result.playerId), result]
+    })),
+    
     reset: () => set({
       pinCode: null, nickname: null, playerId: null, isHost: false,
       status: 'idle', currentQuestion: null, timeRemaining: 0,
-      players: [], leaderboard: [], answeredCount: 0, lastAnswerResult: null
+      players: [], leaderboard: [], answeredCount: 0, lastAnswerResult: null,
+      roundResults: []
     })
 }));
 

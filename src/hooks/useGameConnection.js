@@ -16,6 +16,7 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
     const setStatus = useGameStore((s) => s.setStatus);
     const setAnsweredCount = useGameStore((s) => s.setAnsweredCount);
     const setLastAnswerResult = useGameStore((s) => s.setLastAnswerResult);
+    const addRoundResult = useGameStore((s) => s.addRoundResult);
 
     useEffect(() => {
         if (!pinCode) return;
@@ -43,7 +44,8 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
                     setTimer(question.timeLimitSeconds);
                     setAnsweredCount(0);
                     setLastAnswerResult(null);
-                    questionStartRef.current = Date.now();
+                    useGameStore.setState({ roundResults: [] });
+                    questionStartRef.current = null;
                 });
 
                 client.subscribe(`/topic/game/${pinCode}/leaderboard`, (msg) => {
@@ -54,6 +56,7 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
                     const result = JSON.parse(msg.body);
                     const { playerId, answeredCount } = useGameStore.getState();
                     setAnsweredCount(answeredCount + 1);
+                    addRoundResult(result);
 
                     if (result.playerId === playerId) {
                         setLastAnswerResult(result);
@@ -91,6 +94,17 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
         return () => client.deactivate();
     }, [pinCode, isHost]);
 
+    const markAnswerStart = () => {
+        questionStartRef.current = Date.now();
+    };
+
+    const finalizeQuestion = () => {
+        clientRef.current?.publish({
+            destination: `/app/game/${pinCode}/finalize`,
+            body: ''
+        });
+    };
+
     const sendAnswer = (questionId, answerId) => {
         const responseTimeMs = questionStartRef.current ? Date.now() - questionStartRef.current : 0;
 
@@ -102,5 +116,5 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
         });
     };
 
-    return { sendAnswer };
+    return { sendAnswer, markAnswerStart, finalizeQuestion };
 }

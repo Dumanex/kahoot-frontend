@@ -1,19 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import useGameStore from "../../stores/gameStore";
 
 function Timer({seconds}) {
-    const [remaining, setRemaining] = useState(seconds);
+    const timeRemaining = useGameStore((s) => s.timeRemaining);
+    const setTimer = useGameStore((s) => s.setTimer);
 
     useEffect(() => {
-        setRemaining(seconds);
+        setTimer(seconds);
 
         const interval = setInterval(() => {
-            setRemaining((prev) => (prev > 0 ? prev - 1 : 0));
+            const current = useGameStore.getState().timeRemaining;
+            setTimer(current > 0 ? current - 1 : 0);
         }, 1000);
 
         return () => clearInterval(interval);
     }, [seconds]);
 
-    return <p>Preostalo vreme: {remaining}s</p>;
+    return <p>Preostalo vreme: {timeRemaining}s</p>;
 }
 
 export default Timer;
