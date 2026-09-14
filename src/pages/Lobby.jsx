@@ -1,12 +1,16 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getSession } from "../api/gameApi";
 import { translateErrorResponse } from "../utils/errorMessages";
 import useGameStore from "../stores/gameStore";
 import PinInput from "../components/common/PinInput";
 
 function Lobby() {
-    const [pin, setPin] = useState('');
+    const location = useLocation();
+    const prefilledPin = location.state?.pin || '';
+    const prefilledTitle = location.state?.quizTitle;
+
+    const [pin, setPin] = useState(prefilledPin);
     const [nickname, setNickname] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -42,8 +46,9 @@ function Lobby() {
     return (
         <div>
             <h1>Pridruži se igri</h1>
+            {prefilledTitle && <p>Pridružuješ se: {prefilledTitle}</p>}
             <form onSubmit={handleSubmit}>
-                <PinInput value={pin} onChange={setPin} />
+                {!prefilledPin && <PinInput value={pin} onChange={setPin} />}
                 <input
                     type="text"
                     placeholder="Nadimak"

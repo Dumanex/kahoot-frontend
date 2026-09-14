@@ -37,10 +37,10 @@ function Dashboard() {
         }
     };
 
-    const handleHost = async (quizId) => {
+    const handleHost = async (quizId, isPublic) => {
           setError('');
           try {
-              const response = await createSession(quizId);
+              const response = await createSession(quizId, isPublic ? 'PUBLIC' : 'PRIVATE');
               resetGame();
               navigate(`/host/${response.data.pinCode}`);
           } catch (err) {
@@ -54,7 +54,7 @@ function Dashboard() {
             <button onClick={logout}>Odjavi se</button>
             <Link to="/quiz/new">Napravi novi kviz</Link>
             <br />
-            <Link to="/join">Pridruži se igri</Link>
+            <Link to="/">Početna</Link>
 
             {error && <p>{error}</p>}
 
