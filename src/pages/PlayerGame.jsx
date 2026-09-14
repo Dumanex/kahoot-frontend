@@ -84,7 +84,9 @@ function PlayerGame() {
         return (
             <div>
                 <QuestionDisplay question={currentQuestion} />
-                <p>{lastAnswerResult ? (lastAnswerResult.isCorrect ? "Tačno!" : "Netačno!") : "Nisi odgovorio/la na vreme"}</p>
+                <p>
+                    {!lastAnswerResult || lastAnswerResult.chosenAnswerId == null ? "Nisi odgovorio/la na vreme" : (lastAnswerResult.isCorrect ? "Tačno!" : "Netačno!")}
+                </p>
                 <QuestionStats roundResults={roundResults} answers={currentQuestion.answers} />
             </div>
         );

@@ -53,6 +53,8 @@ function Dashboard() {
             <h1>Moji kvizovi</h1>
             <button onClick={logout}>Odjavi se</button>
             <Link to="/quiz/new">Napravi novi kviz</Link>
+            <br />
+            <Link to="/join">Pridruži se igri</Link>
 
             {error && <p>{error}</p>}
 
