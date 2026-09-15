@@ -7,14 +7,18 @@ export function useQuestionPhase() {
     const answeredCount = useGameStore((s) => s.answeredCount);
     const players = useGameStore((s) => s.players);
     const [phase, setPhase] = useState('reveal');
+    const [phaseQuestionId, setPhaseQuestionId] = useState(currentQuestion?.id);
+
+    if (phaseQuestionId !== currentQuestion?.id) {
+        setPhaseQuestionId(currentQuestion?.id);
+        setPhase('reveal');
+    }
 
     useEffect(() => {
-        if (!currentQuestion) return;
-
-        setPhase('reveal');
-        const timeout = setTimeout(() => setPhase('answering'), 3000);
-        return () => clearTimeout(timeout);
-    }, [currentQuestion?.id]);
+          if (!currentQuestion) return;
+          const timeout = setTimeout(() => setPhase('answering'), 3000);
+          return () => clearTimeout(timeout);
+      }, [currentQuestion?.id]);
 
     useEffect(() => {
         if (phase !== 'answering' || !currentQuestion) return;

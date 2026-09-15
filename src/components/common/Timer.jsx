@@ -6,11 +6,16 @@ function Timer({seconds}) {
     const setTimer = useGameStore((s) => s.setTimer);
 
     useEffect(() => {
+        const deadline = Date.now() + seconds * 1000;
         setTimer(seconds);
 
         const interval = setInterval(() => {
-            const current = useGameStore.getState().timeRemaining;
-            setTimer(current > 0 ? current - 1 : 0);
+            const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+            setTimer(remaining);
+
+            if (remaining <= 0) {
+                clearInterval(interval);
+            }
         }, 1000);
 
         return () => clearInterval(interval);
