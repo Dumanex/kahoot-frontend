@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { addQuestion, updateQuestion } from "../../api/quizApi";
+import { addQuestion, updateQuestion, uploadMedia } from "../../api/quizApi";
 import { translateErrorResponse } from "../../utils/errorMessages";
 import AnswerEditor from "./AnswerEditor";
 
@@ -20,8 +20,9 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
     const [timeLimitSeconds, setTimeLimitSeconds] = useState(question?.timeLimitSeconds || 20);
     const [imageUrl, setImageUrl] = useState(question?.imageUrl || '');
     const [audioUrl, setAudioUrl] = useState(question?.audioUrl || '');
-    const [answers, setAnswers] = useState(question?.answers?.map((a) => ({ answerText: a.answerText, isCorrect: a.isCorrect })) || emptyAnswers(2));
+    const [answers, setAnswers] = useState(question?.answers?.map((a) => ({ id: a.id, answerText: a.answerText, isCorrect: a.isCorrect })) || emptyAnswers(2));
     const [error, setError] = useState('');
+    const [uploading, setUploading] = useState(false);
 
     const handleTypeChange = (newType) => {
       setQuestionType(newType);
@@ -51,6 +52,34 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
       setAnswers((prev) => prev.filter((_, i) => i !== index));
     };
 
+    const handleFileUpload = async (e, type) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploading(true);
+        setError('');
+
+        try {
+            const res = await uploadMedia(file, type);
+            if (type === 'image') {
+                setImageUrl(res.data.url);
+            } else {
+                setAudioUrl(res.data.url);
+                const audio = new Audio(res.data.url);
+                audio.addEventListener('loadedmetadata', () => {
+                    if (Number.isFinite(audio.duration)) {
+                        setTimeLimitSeconds(Math.ceil(audio.duration));
+                    }
+                });
+            }
+        } catch (err) {
+            setError(translateErrorResponse(err.response?.data));
+            e.target.value = '';
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -63,6 +92,7 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
             audioUrl: audioUrl || undefined,
             orderIndex,
             answers: answers.map((a, i) => ({
+                id: a.id || undefined,
                 answerText: a.answerText,
                 isCorrect: a.isCorrect,
                 orderIndex: i,
@@ -110,21 +140,27 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
             />
     
             {questionType === 'IMAGE_RECOGNITION' && (
-                <input
-                    type="text"
-                    placeholder="URL slike"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                />
+                <div>
+                    <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'image')} disabled={uploading} />
+                    {imageUrl && (
+                        <div>
+                            <img src={imageUrl} alt="" width="200" />
+                            <button type="button" onClick={() => setImageUrl('')}>Ukloni</button>
+                        </div>
+                    )}
+                </div>
             )}
 
             {questionType === 'AUDIO' && (
-                <input
-                    type="text"
-                    placeholder="URL audio zapisa"
-                    value={audioUrl}
-                    onChange={(e) => setAudioUrl(e.target.value)}
-                />
+                <div>
+                    <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(e, 'audio')} disabled={uploading} />
+                    {audioUrl && (
+                        <div>
+                            <audio src={audioUrl} controls />
+                            <button type="button" onClick={() => setAudioUrl('')}>Ukloni</button>
+                        </div>
+                    )}
+                </div>
             )}
     
             {answers.map((answer, index) => (
@@ -144,8 +180,10 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
             )}
             
             {error && <p>{error}</p>}
+
+            {uploading && <p>Otpremanje u toku...</p>}
   
-            <button type="submit">Sačuvaj pitanje</button>
+            <button type="submit" disabled={uploading}>Sačuvaj pitanje</button>
             <button type="button" onClick={onCancel}>Otkaži</button>
         </form>
     );

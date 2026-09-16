@@ -67,6 +67,13 @@
   
     // E) Ostalo
     'Game started!': 'Igra je počela!',
+
+    // F) Upload (slika/audio)
+    'Invalid file type': 'Nevažeći tip fajla',
+    'File is empty': 'Fajl je prazan',
+    'File size exceeds maximum allowed limit': 'Fajl je prevelik',
+    'Upload type must be image or audio': 'Tip upload-a mora biti image ili audio',
+    'Failed to store file': 'Neuspešno čuvanje fajla na serveru',
 };
 
 const dynamicPatterns = [

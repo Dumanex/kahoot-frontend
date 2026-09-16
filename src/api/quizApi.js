@@ -9,3 +9,11 @@ export const deleteQuiz = (id) => api.delete(`/quizzes/${id}`);
 export const addQuestion = (quizId, data) => api.post(`/quizzes/${quizId}/questions`, data);
 export const updateQuestion = (id, data) => api.put(`/questions/${id}`, data);
 export const deleteQuestion = (id) => api.delete(`/questions/${id}`);
+
+export const uploadMedia = (file, type) => {
+    const formData = new FormData();
+
+    formData.append('file', file);
+
+    return api.post(`/upload?type=${type}`, formData);
+};
