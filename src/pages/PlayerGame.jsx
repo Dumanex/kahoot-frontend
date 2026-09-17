@@ -74,7 +74,7 @@ function PlayerGame() {
     if (phase === 'reveal') {
         return (
             <div>
-                <QuestionDisplay question={currentQuestion} />
+                <QuestionDisplay question={currentQuestion} phase={phase} />
                 <p>Spremi se...</p>
             </div>
         );
@@ -83,7 +83,7 @@ function PlayerGame() {
     if (phase === 'stats') {
         return (
             <div>
-                <QuestionDisplay question={currentQuestion} />
+                <QuestionDisplay question={currentQuestion} phase={phase} />
                 <p>
                     {!lastAnswerResult || lastAnswerResult.chosenAnswerId == null ? "Nisi odgovorio/la na vreme" : (lastAnswerResult.isCorrect ? "Tačno!" : "Netačno!")}
                 </p>
@@ -95,7 +95,7 @@ function PlayerGame() {
     return (
         <div>
             <Timer seconds={currentQuestion.timeLimitSeconds} />
-            <QuestionDisplay question={currentQuestion} />
+            <QuestionDisplay question={currentQuestion} phase={phase} />
 
             {hasAnswered ? (
                 <p>Odgovor poslat! Sačekaj ostale igrače...</p>

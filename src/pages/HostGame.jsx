@@ -92,7 +92,7 @@ function HostGame() {
     return (
         <div>
             {error && <p>{error}</p>}
-            {currentQuestion && <QuestionDisplay question={currentQuestion} />}
+            {currentQuestion && <QuestionDisplay question={currentQuestion} phase={phase} />}
 
             {phase === "answering" && currentQuestion && (
                 <Timer seconds={currentQuestion.timeLimitSeconds} />
