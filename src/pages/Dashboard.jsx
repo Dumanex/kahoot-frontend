@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Home as HomeIcon, LogOut, FileQuestion, CircleAlert } from "lucide-react";
 import useAuthStore from "../stores/authStore";
 import { deleteQuiz, getQuizzes } from "../api/quizApi";
-import { Link, useNavigate } from "react-router-dom";
 import QuizCard from "../components/quiz/QuizCard";
 import useGameStore from "../stores/gameStore";
 import { createSession } from "../api/gameApi";
+import PageShell from "../components/layout/PageShell";
+import Card from "../components/ui/Card";
+import Button from "../components/ui/Button";
 
 function Dashboard() {
     const [quizzes, setQuizzes] = useState([]);
@@ -49,21 +53,37 @@ function Dashboard() {
       };
 
     return (
-        <div>
-            <h1>Moji kvizovi</h1>
-            <button onClick={logout}>Odjavi se</button>
-            <Link to="/quiz/new">Napravi novi kviz</Link>
-            <br />
-            <Link to="/">Početna</Link>
+        <PageShell>
+            <div className="mb-6 flex items-center justify-between">
+                <h1 className="font-display text-2xl">Moji kvizovi</h1>
+                <Button variant="ghost" icon={LogOut} onClick={logout}>Odjavi se</Button>
+            </div>
 
-            {error && <p>{error}</p>}
+            <div className="mb-6 flex gap-3">
+                <Button to="/quiz/new" icon={Plus}>Napravi novi kviz</Button>
+                <Button to="/" variant="secondary" icon={HomeIcon}>Početna</Button>
+            </div>
 
-            {quizzes.length === 0 && <p>Nemaš još nijedan kviz</p>}
+            {error && (
+                <p className="mb-4 flex items-center gap-2 text-sm text-rust">
+                    <CircleAlert size={16} />
+                    {error}
+                </p>
+            )}
 
-            {quizzes.map((quiz) => (
-                <QuizCard key={quiz.id} quiz={quiz} onDelete={handleDelete} onHost={handleHost} />
-            ))}
-        </div>
+            {quizzes.length === 0 ? (
+                <Card className="flex items-center gap-2 text-ink/50">
+                    <FileQuestion size={18} />
+                    <span>Nemaš još nijedan kviz</span>
+                </Card>
+            ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {quizzes.map((quiz) => (
+                        <QuizCard key={quiz.id} quiz={quiz} onDelete={handleDelete} onHost={handleHost} />
+                    ))}
+                </div>
+            )}
+        </PageShell>
     );
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { Play, ArrowRight, Flag, Users, CheckCircle2, ListOrdered, CircleAlert } from "lucide-react";
 import { getSession, startGame, nextQuestion, endGame } from "../api/gameApi";
 import { translateErrorResponse } from "../utils/errorMessages";
 import useGameStore from "../stores/gameStore";
@@ -9,6 +10,9 @@ import QuestionDisplay from "../components/game/QuestionDisplay";
 import QuestionStats from "../components/game/QuestionStats";
 import Podium from "../components/game/Podium";
 import Timer from "../components/common/Timer";
+import PageShell from "../components/layout/PageShell";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
 
 function HostGame() {
     const { pin } = useParams();
@@ -64,49 +68,73 @@ function HostGame() {
 
     if (status === 'results') {
         return (
-            <div>
-                <h1>Igra je završena</h1>
-                <Podium leaderboard={leaderboard} />
-                <Link to={`/results/${pin}`}>Pogledaj ceo leaderboard</Link>
-            </div>
+            <PageShell center>
+                <div className="flex flex-col items-center gap-6">
+                    <h1 className="font-display text-2xl">Igra je završena</h1>
+                    <Podium leaderboard={leaderboard} />
+                    <Button to={`/results/${pin}`} variant="secondary" icon={ListOrdered}>Pogledaj ceo leaderboard</Button>
+                </div>
+            </PageShell>
         );
     }
 
     if (status !== 'playing') {
         return (
-            <div>
-                <h1>{quizTitle}</h1>
-                <h2>PIN: {pin}</h2>
-                {error && <p>{error}</p>}
-                <h3>Igrači ({players.length}):</h3>
-                <ul>
-                    {players.map((p) => (
-                        <li key={p.id}>{p.nickname}</li>
-                    ))}
-                </ul>
-                <button onClick={handleStart} disabled={players.length === 0}>Počni igru</button>
-            </div>
+            <PageShell center>
+                <div className="flex flex-col items-center gap-6 text-center">
+                    <h2 className="font-display text-2xl">{quizTitle}</h2>
+                    <p className="font-display text-7xl tracking-tight md:text-8xl">{pin}</p>
+
+                    {error && (
+                        <p className="flex items-center gap-2 text-sm text-rust">
+                            <CircleAlert size={16} />
+                            {error}
+                        </p>
+                    )}
+
+                    <Badge icon={Users}>{players.length} igrača</Badge>
+                    <div className="flex flex-wrap justify-center gap-2">
+                        {players.map((p) => (
+                            <Badge key={p.id} tone="neutral">{p.nickname}</Badge>
+                        ))}
+                    </div>
+
+                    <Button size="lg" icon={Play} onClick={handleStart} disabled={players.length === 0}>Počni igru</Button>
+                </div>
+            </PageShell>
         );
     }
 
     return (
-        <div>
-            {error && <p>{error}</p>}
-            {currentQuestion && <QuestionDisplay question={currentQuestion} phase={phase} />}
+        <PageShell center>
+            <div className="flex w-full max-w-2xl flex-col items-center gap-6">
+                {error && (
+                    <p className="flex items-center gap-2 text-sm text-rust">
+                        <CircleAlert size={16} />
+                        {error}
+                    </p>
+                )}
 
-            {phase === "answering" && currentQuestion && (
-                <Timer seconds={currentQuestion.timeLimitSeconds} />
-            )}
+                {currentQuestion && <QuestionDisplay question={currentQuestion} phase={phase} />}
 
-            {currentQuestion && phase === 'stats' ? (
-                <QuestionStats roundResults={roundResults} answers={currentQuestion.answers} />
-            ) : (
-                <p>Odgovorilo: {answeredCount} / {players.length}</p>
-            )}
+                {phase === "answering" && currentQuestion && (
+                    <Timer seconds={currentQuestion.timeLimitSeconds} />
+                )}
 
-            <button onClick={handleNext} disabled={phase !== 'stats'}>Sledeće pitanje</button>
-            <button onClick={handleEnd}>Završi igru</button>
-        </div>
+                {currentQuestion && phase === 'stats' ? (
+                    <div className="w-full">
+                        <QuestionStats roundResults={roundResults} answers={currentQuestion.answers} />
+                    </div>
+                ) : (
+                    <Badge icon={CheckCircle2}>Odgovorilo: {answeredCount} / {players.length}</Badge>
+                )}
+
+                <div className="flex gap-3">
+                    <Button icon={ArrowRight} onClick={handleNext} disabled={phase !== 'stats'}>Sledeće pitanje</Button>
+                    <Button variant="danger" icon={Flag} onClick={handleEnd}>Završi igru</Button>
+                </div>
+            </div>
+        </PageShell>
     );
 }
 

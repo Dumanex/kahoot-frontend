@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { User, ArrowRight, CircleAlert } from "lucide-react";
 import { getSession } from "../api/gameApi";
 import { translateErrorResponse } from "../utils/errorMessages";
 import useGameStore from "../stores/gameStore";
 import PinInput from "../components/common/PinInput";
+import PageShell from "../components/layout/PageShell";
+import Card from "../components/ui/Card";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
 
 function Lobby() {
     const location = useLocation();
@@ -44,24 +49,33 @@ function Lobby() {
     };
 
     return (
-        <div>
-            <h1>Pridruži se igri</h1>
-            {prefilledTitle && <p>Pridružuješ se: {prefilledTitle}</p>}
-            <form onSubmit={handleSubmit}>
-                {!prefilledPin && <PinInput value={pin} onChange={setPin} />}
-                <input
-                    type="text"
-                    placeholder="Nadimak"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    minLength={2}
-                    maxLength={30}
-                    required
-                />
-                <button type="submit">Pridruži se</button>
-            </form>
-            {error && <p>{error}</p>}
-        </div>
+        <PageShell center>
+            <Card className="w-full max-w-sm p-6 text-center">
+                <h1 className="mb-6 font-display text-2xl">Pridruži se igri</h1>
+                {prefilledTitle && <p className="mb-4 text-ink/60">Pridružuješ se: {prefilledTitle}</p>}
+
+                <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+                    {!prefilledPin && <PinInput value={pin} onChange={setPin} />}
+                    <Input
+                        icon={User}
+                        placeholder="Nadimak"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        minLength={2}
+                        maxLength={30}
+                        required
+                    />
+                    <Button type="submit" size="lg" icon={ArrowRight} className="w-full">Pridruži se</Button>
+                </form>
+
+                {error && (
+                    <p className="mt-4 flex items-center justify-center gap-2 text-sm text-rust">
+                        <CircleAlert size={16} />
+                        {error}
+                    </p>
+                )}
+            </Card>
+        </PageShell>
     );
 }
 

@@ -1,8 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { User, Mail, Lock, UserPlus, CircleAlert } from 'lucide-react';
 import { register } from '../api/authApi';
 import useAuthStore from '../stores/authStore';
 import { translateErrorResponse } from '../utils/errorMessages';
+import PageShell from '../components/layout/PageShell';
+import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 
 function Register() {
   const [username, setUsername] = useState('');
@@ -27,35 +32,48 @@ function Register() {
   };
 
   return (
-    <div>
-      <h1>Register</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Korisničko ime"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Lozinka"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Registruj se</button>
-      </form>
-      {error && <p>{error}</p>}
-      <Link to="/login">Imaš nalog? Prijavi se</Link>
-    </div>
+    <PageShell center>
+      <Card className="w-full max-w-sm p-6">
+        <h1 className="mb-6 text-center font-display text-2xl">Registracija</h1>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Input
+            icon={User}
+            placeholder="Korisničko ime"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+          />
+          <Input
+            icon={Mail}
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <Input
+            icon={Lock}
+            type="password"
+            placeholder="Lozinka"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <Button type="submit" icon={UserPlus} className="w-full">Registruj se</Button>
+        </form>
+
+        {error && (
+          <p className="mt-3 flex items-center gap-2 text-sm text-rust">
+            <CircleAlert size={16} />
+            {error}
+          </p>
+        )}
+
+        <Link to="/login" className="mt-4 block text-center text-sm text-ink/60 hover:text-moss underline-offset-2 hover:underline">
+          Imaš nalog? Prijavi se
+        </Link>
+      </Card>
+    </PageShell>
   );
 }
 

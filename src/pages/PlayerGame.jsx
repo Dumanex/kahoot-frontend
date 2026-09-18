@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { Hourglass, CheckCircle2, XCircle, ListOrdered } from "lucide-react";
 import useGameStore from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameConnection";
 import { useQuestionPhase } from "../hooks/useQuestionPhase";
@@ -9,6 +10,11 @@ import Timer from "../components/common/Timer";
 import QuestionStats from "../components/game/QuestionStats";
 import Podium from "../components/game/Podium";
 import { useState, useEffect, useMemo } from "react";
+import PageShell from "../components/layout/PageShell";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import Button from "../components/ui/Button";
+import Spinner from "../components/ui/Spinner";
 
 function PlayerGame() {
     const { pin } = useParams();
@@ -46,63 +52,96 @@ function PlayerGame() {
 
     if (status === "results") {
         return (
-            <div>
-                <h1>Igra je završena!</h1>
-                <Podium leaderboard={leaderboard} />
-                <Link to={`/results/${pin}`}>Pogledaj ceo leaderboard</Link>
-            </div>
+            <PageShell center>
+                <div className="flex flex-col items-center gap-6">
+                    <h1 className="font-display text-2xl">Igra je završena!</h1>
+                    <Podium leaderboard={leaderboard} />
+                    <Button to={`/results/${pin}`} variant="secondary" icon={ListOrdered}>Pogledaj ceo leaderboard</Button>
+                </div>
+            </PageShell>
         );
     }
 
     if (status !== "playing" || !currentQuestion) {
         return (
-            <div>
-                <h1>Čekaonica</h1>
-                <p>PIN: {pin}</p>
-                <p>Nadimak: {nickname}</p>
-                <p>Čekaj da host pokrene igru...</p>
-                <h2>Igrači u igri:</h2>
-                <ul>
-                    {players.map((p) => (
-                        <li key={p.id}>{p.nickname}</li>
-                    ))}
-                </ul>
-            </div>
+            <PageShell center>
+                <div className="flex flex-col items-center gap-6 text-center">
+                    <h1 className="font-display text-2xl">Čekaonica</h1>
+                    <p className="font-display text-5xl tracking-[0.2em]">{pin}</p>
+                    <Badge>{nickname}</Badge>
+                    <p className="flex items-center gap-2 text-ink/60">
+                        <Spinner size={16} />
+                        Čekaj da host pokrene igru...
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                        {players.map((p) => (
+                            <Badge key={p.id} tone="neutral">{p.nickname}</Badge>
+                        ))}
+                    </div>
+                </div>
+            </PageShell>
         );
     }
 
     if (phase === 'reveal') {
         return (
-            <div>
-                <QuestionDisplay question={currentQuestion} phase={phase} />
-                <p>Spremi se...</p>
-            </div>
+            <PageShell center>
+                <div className="flex flex-col items-center gap-4">
+                    <QuestionDisplay question={currentQuestion} phase={phase} />
+                    <p className="flex items-center gap-2 text-ink/60">
+                        <Hourglass size={18} />
+                        Spremi se...
+                    </p>
+                </div>
+            </PageShell>
         );
     }
 
     if (phase === 'stats') {
+        const noAnswer = !lastAnswerResult || lastAnswerResult.chosenAnswerId == null;
         return (
-            <div>
-                <QuestionDisplay question={currentQuestion} phase={phase} />
-                <p>
-                    {!lastAnswerResult || lastAnswerResult.chosenAnswerId == null ? "Nisi odgovorio/la na vreme" : (lastAnswerResult.isCorrect ? "Tačno!" : "Netačno!")}
-                </p>
-                <QuestionStats roundResults={roundResults} answers={currentQuestion.answers} />
-            </div>
+            <PageShell center>
+                <div className="flex flex-col items-center gap-4">
+                    <QuestionDisplay question={currentQuestion} phase={phase} />
+                    {noAnswer ? (
+                        <p className="text-lg text-ink/60">Nisi odgovorio/la na vreme</p>
+                    ) : lastAnswerResult.isCorrect ? (
+                        <p className="flex items-center gap-2 font-display text-3xl text-moss">
+                            <CheckCircle2 size={32} />
+                            Tačno!
+                        </p>
+                    ) : (
+                        <p className="flex items-center gap-2 font-display text-3xl text-rust">
+                            <XCircle size={32} />
+                            Netačno!
+                        </p>
+                    )}
+                    <div className="w-full max-w-md">
+                        <QuestionStats roundResults={roundResults} answers={currentQuestion.answers} />
+                    </div>
+                </div>
+            </PageShell>
         );
     }
 
     return (
-        <div>
-            <Timer seconds={currentQuestion.timeLimitSeconds} />
-            <QuestionDisplay question={currentQuestion} phase={phase} />
+        <PageShell center>
+            <div className="flex w-full max-w-2xl flex-col items-center gap-6">
+                <Timer seconds={currentQuestion.timeLimitSeconds} />
+                <QuestionDisplay question={currentQuestion} phase={phase} />
 
-            {hasAnswered ? (
-                <p>Odgovor poslat! Sačekaj ostale igrače...</p>
-            ): (
-                <AnswerOptions answers={shuffledAnswers} onSelect={handleAnswer} disabled={hasAnswered} />
-            )}
-        </div>
+                {hasAnswered ? (
+                    <Card className="flex items-center gap-2 text-ink/60">
+                        <CheckCircle2 size={18} className="text-moss" />
+                        Odgovor poslat! Sačekaj ostale igrače...
+                    </Card>
+                ) : (
+                    <div className="w-full">
+                        <AnswerOptions answers={shuffledAnswers} onSelect={handleAnswer} disabled={hasAnswered} />
+                    </div>
+                )}
+            </div>
+        </PageShell>
     );
 }
 

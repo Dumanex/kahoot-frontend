@@ -1,6 +1,9 @@
-import { Link, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
+import { LayoutDashboard, LogOut, LogIn, UserPlus, KeyRound } from "lucide-react";
 import useAuthStore from "../stores/authStore";
 import PublicGamesList from "../components/game/PublicGamesList";
+import PageShell from "../components/layout/PageShell";
+import Button from "../components/ui/Button";
 
 function Home() {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -14,26 +17,31 @@ function Home() {
     };
 
     return (
-        <div>
-        <h1>Kahoot</h1>
+        <PageShell>
+        <div className="flex flex-col items-center gap-8 text-center">
+          <h1 className="font-display text-4xl">Kahoot</h1>
 
-        {isAuthenticated ? (
-          <div>
-            <Link to="/dashboard">Idi na Dashboard</Link>
-            <button onClick={handleLogout}>Odjavi se</button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {isAuthenticated ? (
+              <>
+                <Button to="/dashboard" variant="secondary" icon={LayoutDashboard}>Idi na Dashboard</Button>
+                <Button variant="ghost" icon={LogOut} onClick={handleLogout}>Odjavi se</Button>
+              </>
+            ) : (
+              <>
+                <Button to="/login" variant="secondary" icon={LogIn}>Prijavi se</Button>
+                <Button to="/register" variant="secondary" icon={UserPlus}>Registruj se</Button>
+              </>
+            )}
           </div>
-        ) : (
-          <div>
-            <Link to="/login">Prijavi se</Link>
-            <br />
-            <Link to="/register">Registruj se</Link>
+
+          <Button to="/join" size="lg" icon={KeyRound}>Pridruži se preko PIN koda</Button>
+
+          <div className="w-full max-w-2xl text-left">
+            <PublicGamesList excludeHostName={username} />
           </div>
-        )}
-
-        <Link to="/join">Pridruži se preko PIN koda</Link>
-
-        <PublicGamesList excludeHostName={username} />
-      </div>
+        </div>
+      </PageShell>
     );
 }
 
