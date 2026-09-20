@@ -32,7 +32,7 @@ function Lobby() {
 
             if (response.data.status !== 'WAITING') {
                 if (response.data.status !== 'IN_PROGRESS') {
-                    setError('Igra je završena');
+                    setError('Igra je završena!');
                     return;
                 }
                 setError('Igra je već počela');

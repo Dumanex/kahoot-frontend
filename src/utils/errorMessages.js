@@ -4,7 +4,7 @@
     'Already answered this question': 'Već si odgovorio/la na ovo pitanje',
     'Player does not belong to this game session': 'Igrač ne pripada ovoj igri',
     'Game already started': 'Igra je već počela',
-    'Game ended': 'Igra je završena',
+    'Game ended': 'Igra je završena!',
     'Game is not IN PROGRESS': 'Igra nije u toku',
 
     // B) REST validacione poruke (po polju)

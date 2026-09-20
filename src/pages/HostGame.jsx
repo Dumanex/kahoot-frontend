@@ -70,7 +70,7 @@ function HostGame() {
         return (
             <PageShell center>
                 <div className="flex flex-col items-center gap-6">
-                    <h1 className="font-display text-2xl">Igra je završena</h1>
+                    <h1 className="font-display text-2xl">Igra je završena!</h1>
                     <Podium leaderboard={leaderboard} />
                     <Button to={`/results/${pin}`} variant="secondary" icon={ListOrdered}>Pogledaj ceo leaderboard</Button>
                 </div>
