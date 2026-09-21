@@ -17,17 +17,10 @@ function Dashboard() {
     const resetGame = useGameStore((state) => state.reset);
     const navigate = useNavigate();
 
-    const loadQuizzes = async () => {
-        try {
-            const response = await getQuizzes();
-            setQuizzes(response.data.content);
-        } catch (err) {
-            setError("Neuspešno učitavanje kvizova");
-        }
-    };
-
     useEffect(() => {
-        loadQuizzes();
+        getQuizzes()
+            .then((response) => setQuizzes(response.data.content))
+            .catch(() => setError("Neuspešno učitavanje kvizova"));
     }, []);
 
     const handleDelete = async (id) => {
@@ -36,7 +29,7 @@ function Dashboard() {
         try {
             await deleteQuiz(id);
             setQuizzes((prev) => prev.filter((q) => q.id !== id))
-        } catch (err) {
+        } catch {
             setError("Neuspešno brisanje kviza");
         }
     };
@@ -47,7 +40,7 @@ function Dashboard() {
               const response = await createSession(quizId, isPublic ? 'PUBLIC' : 'PRIVATE');
               resetGame();
               navigate(`/host/${response.data.pinCode}`);
-          } catch (err) {
+          } catch {
               setError("Neuspešno pokretanje igre");
           }
       };

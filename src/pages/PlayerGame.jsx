@@ -25,7 +25,8 @@ function PlayerGame() {
     const lastAnswerResult = useGameStore((state) => state.lastAnswerResult);
     const leaderboard = useGameStore((state) => state.leaderboard);
     const roundResults = useGameStore((state) => state.roundResults);
-    const [hasAnswered, setHasAnswered] = useState(false);
+    const [answeredQuestionId, setAnsweredQuestionId] = useState(null);
+    const hasAnswered = answeredQuestionId === currentQuestion?.id;
 
     const { sendAnswer, markAnswerStart } = useGameConnection(pin);
     const phase = useQuestionPhase();
@@ -36,10 +37,6 @@ function PlayerGame() {
     );
 
     useEffect(() => {
-        setHasAnswered(false);
-    }, [currentQuestion?.id]);
-
-    useEffect(() => {
         if (phase === 'answering') {
             markAnswerStart();
         }
@@ -47,7 +44,7 @@ function PlayerGame() {
 
     const handleAnswer = (answerId) => {
         sendAnswer(currentQuestion.id, answerId);
-        setHasAnswered(true);
+        setAnsweredQuestionId(currentQuestion.id);
     };
 
     if (status === "results") {

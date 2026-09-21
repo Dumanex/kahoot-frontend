@@ -23,22 +23,17 @@ function QuizEditor() {
     const [error, setError] = useState('');
     const [editingQuestion, setEditingQuestion] = useState(null);
 
-    const loadQuiz = async () => {
-      try {
-        const response = await getQuiz(id);
-        setTitle(response.data.title);
-        setDescription(response.data.description || '');
-        setTimePerQuestion(response.data.timePerQuestion);
-        setQuestions(response.data.questions || []);
-      } catch (err) {
-        setError(translateErrorResponse(err.response?.data));
-      }
-    };
-
     useEffect(() => {
-      if (!isNew) {
-        loadQuiz();
-      }
+      if (!id) return;
+
+      getQuiz(id)
+        .then((response) => {
+            setTitle(response.data.title);
+            setDescription(response.data.description || '');
+            setTimePerQuestion(response.data.timePerQuestion);
+            setQuestions(response.data.questions || []);
+        })
+        .catch((err) => setError(translateErrorResponse(err.response?.data)));
     }, [id]);
 
     const handleSaveQuiz = async (e) => {
@@ -70,9 +65,15 @@ function QuizEditor() {
       }
     };
 
-    const handleQuestionSaved = () => {
+    const handleQuestionSaved = async () => {
       setEditingQuestion(null);
-      loadQuiz();
+
+      try {
+        const response = await getQuiz(id);
+        setQuestions(response.data.questions || []);
+      } catch (err) {
+        setError(translateErrorResponse(err.response?.data));
+      }
     };
 
     return (

@@ -16,7 +16,7 @@ function PublicGamesList({excludeHostName}) {
         try {
             const response = await getPublicGames(search);
             setGames(response.data.content);
-        } catch (err) {
+        } catch {
             // empty list
         }
     };

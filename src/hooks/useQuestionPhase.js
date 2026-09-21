@@ -8,28 +8,27 @@ export function useQuestionPhase() {
     const players = useGameStore((s) => s.players);
     const [phase, setPhase] = useState('reveal');
     const [phaseQuestionId, setPhaseQuestionId] = useState(currentQuestion?.id);
+    const questionId = currentQuestion?.id;
 
     if (phaseQuestionId !== currentQuestion?.id) {
         setPhaseQuestionId(currentQuestion?.id);
         setPhase('reveal');
     }
 
+    const timesUp = timeRemaining <= 0;
+    const everyoneAnswered = players.length > 0 && answeredCount >= players.length;
+
+    if (phase === 'answering' && currentQuestion && (timesUp || everyoneAnswered)) {
+        setPhase('stats');
+    }
+    
     useEffect(() => {
-          if (!currentQuestion) return;
-          const timeout = setTimeout(() => setPhase('answering'), 3000);
-          return () => clearTimeout(timeout);
-      }, [currentQuestion?.id]);
+        if (questionId === undefined) return;
 
-    useEffect(() => {
-        if (phase !== 'answering' || !currentQuestion) return;
+        const timeout = setTimeout(() => setPhase('answering'), 3000);
 
-        const timesUp = timeRemaining <= 0;
-        const everyoneAnswered = players.length > 0 && answeredCount >= players.length;
-
-        if (timesUp || everyoneAnswered) {
-            setPhase('stats');
-        }
-    }, [timeRemaining, answeredCount, players.length, phase]);
+        return () => clearTimeout(timeout);
+    }, [questionId]);
 
     return phase;
 }
