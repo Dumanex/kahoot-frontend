@@ -146,6 +146,7 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
                     value={timeLimitSeconds}
                     onChange={(e) => setTimeLimitSeconds(e.target.value)}
                     min="1"
+                    step="1"
                     required
                 />
 

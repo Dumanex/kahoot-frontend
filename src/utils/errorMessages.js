@@ -21,6 +21,7 @@
     'Question type is required': 'Tip pitanja je obavezan',
     'Question text is required': 'Tekst pitanja je obavezan',
     'Time limit must be positive': 'Vremensko ograničenje mora biti pozitivan broj',
+    'Time limit is required': 'Vremensko ograničenje je obavezno',
     'Order index is required': 'Redni broj je obavezan',
     'Answers are required': 'Odgovori su obavezni',
     'Must have 2-4 answers': 'Mora postojati 2-4 odgovora',
@@ -56,6 +57,7 @@
     'You have already answered this question': 'Već si odgovorio/la na ovo pitanje',
     'Nickname is already taken in this game': 'Nadimak je već zauzet u ovoj igri',
     'This record was modified concurrently, please retry': 'Podaci su izmenjeni u međuvremenu, pokušaj ponovo',
+    'Cannot delete an answer that has already been chosen by a player': 'Ne možeš obrisati odgovor koji je igrač već izabrao',
 
      // D) Fiksne HTTP fraze
     'Not Found': 'Nije pronađeno',
@@ -64,6 +66,8 @@
     'Bad Request': 'Neispravan zahtev',
     'Forbidden': 'Zabranjeno',
     'Internal Server Error': 'Greška na serveru',
+    'Malformed or unreadable request body': 'Neispravan zahtev',
+    'Resource not found': 'Nije pronađeno',
   
     // E) Ostalo
     'Game started!': 'Igra je počela!',
@@ -89,7 +93,10 @@ const dynamicPatterns = [
     { re: /^Question not found: (.+)$/, tr: (m) => `Pitanje nije pronađeno: ${m[1]}` },
     { re: /^Game session not found( with PIN)?: (.+)$/, tr: (m) => `Igra sa PIN kodom ${m[2]} nije pronađena` },
     { re: /^Player not found: (.+)$/, tr: (m) => `Igrač nije pronađen: ${m[1]}` },
-    { re: /^An unexpected error occurred:/, tr: () => 'Došlo je do neočekivane greške' },
+    { re: /^An unexpected error occurred/, tr: () => 'Došlo je do neočekivane greške' },
+    { re: /^Invalid value for parameter '(.+)'$/, tr: (m) => `Neispravna vrednost parametra "${m[1]}"` },
+    { re: /^Missing required parameter '(.+)'$/, tr: (m) => `Nedostaje obavezan parametar "${m[1]}"` },
+    { re: /^HTTP method (.+) is not supported for this endpoint$/, tr: (m) => `Metoda ${m[1]} nije podržana` },
 ];
 
 export function translateMessage(message) {
@@ -111,7 +118,7 @@ export function translateErrorResponse(data) {
     if (!data) return 'Greška u komunikaciji sa serverom';
   
     if (data.errors && Object.keys(data.errors).length > 0) {
-      return Object.values(data.errors).map(translateMessage).join(', ');
+      return [...new Set(Object.values(data.errors).map(translateMessage))].join(', ');
     }
   
     return translateMessage(data.message);

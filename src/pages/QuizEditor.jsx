@@ -101,6 +101,7 @@ function QuizEditor() {
                         value={timePerQuestion}
                         onChange={(e) => setTimePerQuestion(e.target.value)}
                         min="1"
+                        step="1"
                         required
                     />
 

@@ -3,6 +3,7 @@ import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import useGameStore from "../stores/gameStore";
 import { translateMessage } from "../utils/errorMessages";
+import useAuthStore from "../stores/authStore"
 
 export function useGameConnection(pinCode, { isHost = false } = {}) {
     const clientRef = useRef(null);
@@ -24,6 +25,14 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
         const client = new Client({
             webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
             reconnectDelay: 5000,
+
+            beforeConnect: (stompClient) => {
+                // Samo host salje JWT, igrac nikad (istekao token bi odbio CONNECT)
+                if (!isHost) return;
+
+                const token = useAuthStore.getState().token;
+                stompClient.connectHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+            },
 
             onConnect: () => {
                 client.subscribe(`/topic/game/${pinCode}/players`, (msg) => {
@@ -84,6 +93,16 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
                         destination: `/app/game/${pinCode}/join`,
                         body: JSON.stringify({ nickname })
                     });
+                }
+            },
+
+            onStompError: (frame) => {
+                console.error('STOMP greska:', frame.headers.message);
+
+                if (isHost) {
+                    // Token je istekao ili nevazeci: prekini konekciju da se ne ponavlja na svakih 5s
+                    client.deactivate();
+                    useAuthStore.getState().logout();
                 }
             }
         });
