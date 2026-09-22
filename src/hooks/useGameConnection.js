@@ -1,13 +1,15 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import useGameStore from "../stores/gameStore";
-import { translateMessage } from "../utils/errorMessages";
+import { translateMessage, extractTakenNickname } from "../utils/errorMessages";
 import useAuthStore from "../stores/authStore"
 
 export function useGameConnection(pinCode, { isHost = false } = {}) {
     const clientRef = useRef(null);
     const questionStartRef = useRef(null);
+    const navigate = useNavigate();
 
     const setPlayerId = useGameStore((s) => s.setPlayerId);
     const setPlayers = useGameStore((s) => s.setPlayers);
@@ -27,7 +29,6 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
             reconnectDelay: 5000,
 
             beforeConnect: (stompClient) => {
-                // Samo host salje JWT, igrac nikad (istekao token bi odbio CONNECT)
                 if (!isHost) return;
 
                 const token = useAuthStore.getState().token;
@@ -84,7 +85,18 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
 
                 client.subscribe(`/topic/game/${pinCode}/error`, (msg) => {
                     const error = JSON.parse(msg.body);
-                    console.error('Greška iz igre:', translateMessage(error.message));
+                    const translated = translateMessage(error.message);
+                    console.error('Greška iz igre:', translated);
+
+                    if (isHost) return;
+
+                    const takenNickname = extractTakenNickname(error.message);
+                    const { nickname: myNickname, playerId } = useGameStore.getState();
+
+                    if (takenNickname && takenNickname === myNickname && playerId == null) {
+                        useGameStore.getState().reset();
+                        navigate('/join', { state: { pin: pinCode, joinError: translated } });
+                    }
                 });
 
                 if (!isHost) {
@@ -100,7 +112,6 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
                 console.error('STOMP greska:', frame.headers.message);
 
                 if (isHost) {
-                    // Token je istekao ili nevazeci: prekini konekciju da se ne ponavlja na svakih 5s
                     client.deactivate();
                     useAuthStore.getState().logout();
                 }

@@ -17,7 +17,7 @@ function Lobby() {
 
     const [pin, setPin] = useState(prefilledPin);
     const [nickname, setNickname] = useState('');
-    const [error, setError] = useState('');
+    const [error, setError] = useState(location.state?.joinError || '');
     const navigate = useNavigate();
     const setPinCode = useGameStore((state) => state.setPinCode);
     const setNicknameInStore = useGameStore((state) => state.setNickname);

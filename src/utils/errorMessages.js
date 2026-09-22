@@ -1,4 +1,6 @@
- const messages = {
+const NOT_QUIZ_CREATOR_MESSAGE = 'You are not creator of this quiz, DO NOT HAVE PERMISSION TO MODIFY';
+
+const messages = {
     // A) WebSocket - fiksne
     'Invalid question': 'Nevažeće pitanje',
     'Already answered this question': 'Već si odgovorio/la na ovo pitanje',
@@ -42,7 +44,7 @@
     'Username already exists': 'Korisničko ime već postoji',
     'Email already exists': 'Email adresa već postoji',
     'Invalid credentials': 'Pogrešno korisničko ime ili lozinka',
-    'You are not creator of this quiz, DO NOT HAVE PERMISSION TO MODIFY': 'Nisi kreator ovog kviza - nemaš dozvolu za izmenu',
+    [NOT_QUIZ_CREATOR_MESSAGE]: 'Nisi kreator ovog kviza - nemaš dozvolu za izmenu',
     'You are not the creator of this quiz': 'Nisi kreator ovog kviza',
     'At least one answer must be correct': 'Bar jedan odgovor mora biti tačan',
     'MULTIPLE_CHOICE must have 2-4 answers': 'Pitanje sa više opcija mora imati 2-4 odgovora',
@@ -80,8 +82,10 @@
     'Failed to store file': 'Neuspešno čuvanje fajla na serveru',
 };
 
+const NICKNAME_TAKEN_RE = /^Nickname '(.+)' is already taken in this game$/;
+
 const dynamicPatterns = [
-    { re: /^Nickname '(.+)' is already taken in this game$/, tr: (m) => `Nadimak "${m[1]}" je već zauzet u ovoj igri` },
+    { re: NICKNAME_TAKEN_RE, tr: (m) => `Nadimak "${m[1]}" je već zauzet u ovoj igri` },
     { re: /^Can only join while game is WAITING\. Current status: (.+)$/, tr: (m) => `Igri se može pridružiti samo dok čeka igrače (trenutni status: ${m[1]})` },
     { re: /^Game is not IN_PROGRESS\. Current status: (.+)$/, tr: (m) => `Igra nije u toku (trenutni status: ${m[1]})` },
     { re: /^Failed to generate unique PIN after (\d+) attempts$/, tr: (m) => `Nije moguće generisati jedinstveni PIN kod (${m[1]} pokušaja)` },
@@ -112,6 +116,15 @@ export function translateMessage(message) {
     }
   
     return 'Došlo je do greške, pokušaj ponovo';
+}
+
+export function extractTakenNickname(message) {
+    const match = message && message.match(NICKNAME_TAKEN_RE);
+    return match ? match[1] : null;
+}
+
+export function isNotQuizCreatorError(message) {
+    return message === NOT_QUIZ_CREATOR_MESSAGE;
 }
 
 export function translateErrorResponse(data) {

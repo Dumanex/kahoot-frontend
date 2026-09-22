@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Play, ArrowRight, Flag, Users, CheckCircle2, ListOrdered, CircleAlert } from "lucide-react";
 import { getSession, startGame, nextQuestion, endGame } from "../api/gameApi";
 import { translateErrorResponse } from "../utils/errorMessages";
+import { everyoneScoredZero } from "../utils/ranking";
 import useGameStore from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameConnection";
 import { useQuestionPhase } from "../hooks/useQuestionPhase";
@@ -71,7 +72,11 @@ function HostGame() {
             <PageShell center>
                 <div className="flex flex-col items-center gap-6">
                     <h1 className="font-display text-2xl">Igra je završena!</h1>
-                    <Podium leaderboard={leaderboard} />
+                    {everyoneScoredZero(leaderboard) ? (
+                        <p className="text-ink/60">Partija je završena bez rezultata - niko nije osvojio nijedan poen</p>
+                    ) : (
+                        <Podium leaderboard={leaderboard} />
+                    )}
                     <Button to={`/results/${pin}`} variant="secondary" icon={ListOrdered}>Pogledaj ceo leaderboard</Button>
                 </div>
             </PageShell>

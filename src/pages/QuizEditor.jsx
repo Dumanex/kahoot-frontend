@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Save, Plus, Pencil, Trash2, Timer as TimerIcon, CircleAlert } from 'lucide-react';
 import { getQuiz, createQuiz, updateQuiz, deleteQuestion } from '../api/quizApi';
-import { translateErrorResponse } from '../utils/errorMessages';
+import { translateErrorResponse, isNotQuizCreatorError } from '../utils/errorMessages';
 import QuestionEditor from '../components/quiz/QuestionEditor';
 import PageShell from '../components/layout/PageShell';
 import Card from '../components/ui/Card';
@@ -22,6 +22,7 @@ function QuizEditor() {
     const [questions, setQuestions] = useState([]);
     const [error, setError] = useState('');
     const [editingQuestion, setEditingQuestion] = useState(null);
+    const [deleteError, setDeleteError] = useState(null);
 
     useEffect(() => {
       if (!id) return;
@@ -33,8 +34,17 @@ function QuizEditor() {
             setTimePerQuestion(response.data.timePerQuestion);
             setQuestions(response.data.questions || []);
         })
-        .catch((err) => setError(translateErrorResponse(err.response?.data)));
-    }, [id]);
+        .catch((err) => {
+            const data = err.response?.data;
+
+            if (isNotQuizCreatorError(data?.message)) {
+                navigate('/dashboard', { replace: true, state: { ownerError: translateErrorResponse(data) } });
+                return;
+            }
+
+            setError(translateErrorResponse(data));
+        });
+    }, [id, navigate]);
 
     const handleSaveQuiz = async (e) => {
       e.preventDefault();
@@ -57,11 +67,13 @@ function QuizEditor() {
     const handleDeleteQuestion = async (questionId) => {
       if (!window.confirm('Da li sigurno želiš da obrišeš ovo pitanje?')) return;
 
+      setDeleteError(null);
+
       try {
         await deleteQuestion(questionId);
         setQuestions((prev) => prev.filter((q) => q.id !== questionId));
       } catch (err) {
-        setError(translateErrorResponse(err.response?.data));
+        setDeleteError({ questionId, message: translateErrorResponse(err.response?.data) });
       }
     };
 
@@ -138,16 +150,25 @@ function QuizEditor() {
                             onCancel={() => setEditingQuestion(null)}
                             />
                         ) : (
-                            <Card key={q.id} className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-3">
-                                    <Badge>{q.orderIndex + 1}</Badge>
-                                    <span>{q.questionText}</span>
-                                    <Badge tone="neutral">{q.questionType}</Badge>
+                            <Card key={q.id} className="flex flex-col gap-2">
+                                <div className="flex items-center justify-between gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <Badge>{q.orderIndex + 1}</Badge>
+                                        <span>{q.questionText}</span>
+                                        <Badge tone="neutral">{q.questionType}</Badge>
+                                    </div>
+                                    <div className="flex shrink-0 gap-2">
+                                        <Button variant="ghost" icon={Pencil} onClick={() => setEditingQuestion(q)}>Uredi</Button>
+                                        <Button variant="danger" icon={Trash2} onClick={() => handleDeleteQuestion(q.id)}>Obriši</Button>
+                                    </div>
                                 </div>
-                                <div className="flex shrink-0 gap-2">
-                                    <Button variant="ghost" icon={Pencil} onClick={() => setEditingQuestion(q)}>Uredi</Button>
-                                    <Button variant="danger" icon={Trash2} onClick={() => handleDeleteQuestion(q.id)}>Obriši</Button>
-                                </div>
+
+                                {deleteError?.questionId === q.id && (
+                                    <p className="flex items-center gap-2 text-sm text-rust">
+                                        <CircleAlert size={16} />
+                                        {deleteError.message}
+                                    </p>
+                                )}
                             </Card>
                         )
                         ))}

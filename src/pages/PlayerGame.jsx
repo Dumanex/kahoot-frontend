@@ -4,6 +4,7 @@ import useGameStore from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameConnection";
 import { useQuestionPhase } from "../hooks/useQuestionPhase";
 import { shuffle } from "../utils/shuffle";
+import { everyoneScoredZero } from "../utils/ranking";
 import QuestionDisplay from "../components/game/QuestionDisplay";
 import AnswerOptions from "../components/game/AnswerOptions";
 import Timer from "../components/common/Timer";
@@ -52,7 +53,11 @@ function PlayerGame() {
             <PageShell center>
                 <div className="flex flex-col items-center gap-6">
                     <h1 className="font-display text-2xl">Igra je završena!</h1>
-                    <Podium leaderboard={leaderboard} />
+                    {everyoneScoredZero(leaderboard) ? (
+                        <p className="text-ink/60">Partija je završena bez rezultata - niko nije osvojio nijedan poen</p>
+                    ) : (
+                        <Podium leaderboard={leaderboard} />
+                    )}
                     <Button to={`/results/${pin}`} variant="secondary" icon={ListOrdered}>Pogledaj ceo leaderboard</Button>
                 </div>
             </PageShell>

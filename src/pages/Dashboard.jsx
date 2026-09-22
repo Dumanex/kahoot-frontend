@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Plus, Home as HomeIcon, LogOut, FileQuestion, CircleAlert } from "lucide-react";
 import useAuthStore from "../stores/authStore";
 import { deleteQuiz, getQuizzes } from "../api/quizApi";
@@ -9,10 +9,13 @@ import { createSession } from "../api/gameApi";
 import PageShell from "../components/layout/PageShell";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
+import Modal from "../components/ui/Modal";
 
 function Dashboard() {
+    const location = useLocation();
     const [quizzes, setQuizzes] = useState([]);
     const [error, setError] = useState('');
+    const [ownerError, setOwnerError] = useState(location.state?.ownerError || '');
     const logout = useAuthStore((state) => state.logout);
     const resetGame = useGameStore((state) => state.reset);
     const navigate = useNavigate();
@@ -47,6 +50,10 @@ function Dashboard() {
 
     return (
         <PageShell>
+            <Modal open={!!ownerError} onClose={() => setOwnerError('')}>
+                {ownerError}
+            </Modal>
+
             <div className="mb-6 flex items-center justify-between">
                 <h1 className="font-display text-2xl">Moji kvizovi</h1>
                 <Button variant="ghost" icon={LogOut} onClick={logout}>Odjavi se</Button>
