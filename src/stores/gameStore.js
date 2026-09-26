@@ -5,7 +5,6 @@ const initialState = {
     nickname: null,
     playerId: null,
     rejoinToken: null,
-    isHost: false,
 
     status: "idle",
     quizTitle: '',
@@ -17,28 +16,16 @@ const initialState = {
     players: [],
     leaderboard: [],
     answeredCount: 0,
+    chosenAnswerId: null,
     lastAnswerResult: null,
     roundResults: [],
+    serverError: '',
 };
 
 const useGameStore = create((set) => ({
     ...initialState,
 
-    setPinCode: (pin) => set({ pinCode: pin }),
-    setNickname: (name) => set({ nickname: name }),
-    setPlayerId: (id) => set({ playerId: id }),
-    setHost: () => set({ isHost: true }),
-    setStatus: (status) => set({ status }),
-    setCurrentQuestion: (question) => set({ currentQuestion: question }),
     setTimer: (seconds) => set({ timeRemaining: seconds }),
-    setPlayers: (players) => set({ players }),
-    setLeaderboard: (scores) => set({ leaderboard: scores }),
-    setAnsweredCount: (count) => set({ answeredCount: count }),
-    setLastAnswerResult: (result) => set({ lastAnswerResult: result }),
-    addRoundResult: (result) => set((state) => ({
-      roundResults: [...state.roundResults.filter((r) => r.playerId !== result.playerId), result]
-    })),
-
     reset: () => set(initialState)
 }));
 

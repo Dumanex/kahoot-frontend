@@ -32,6 +32,8 @@ function HostGame() {
     const roundResults = useGameStore((state) => state.roundResults);
     const quizTitle = useGameStore((state) => state.quizTitle);
     const questionDeadline = useGameStore((state) => state.questionDeadline);
+    const serverError = useGameStore((state) => state.serverError);
+    const shownError = error || serverError;
 
     const { finalizeQuestion } = useGameConnection(pin, { isHost: true });
     const phase = useQuestionPhase();
@@ -44,6 +46,7 @@ function HostGame() {
 
     const handleStart = async () => {
         setError('');
+        useGameStore.setState({ serverError: '' });
         setStartRequested(true);
         try {
             await startGame(pin);
@@ -55,6 +58,7 @@ function HostGame() {
 
     const handleNext = async () => {
         setError('');
+        useGameStore.setState({ serverError: '' });
         setNextRequestedFor(currentQuestion.id);
         try {
             await nextQuestion(pin);
@@ -66,6 +70,7 @@ function HostGame() {
 
     const handleEnd = async () => {
         setError('');
+        useGameStore.setState({ serverError: '' });
         setEnding(true);
         try {
             await endGame(pin);
@@ -113,10 +118,10 @@ function HostGame() {
                     <h2 className="font-display text-2xl">{quizTitle}</h2>
                     <p className="font-display text-7xl tracking-tight md:text-8xl">{pin}</p>
 
-                    {error && (
+                    {shownError && (
                         <p className="flex items-center gap-2 text-sm text-rust">
                             <CircleAlert size={16} />
-                            {error}
+                            {shownError}
                         </p>
                     )}
 
@@ -136,10 +141,10 @@ function HostGame() {
     return (
         <PageShell center>
             <div className="flex w-full max-w-2xl flex-col items-center gap-6">
-                {error && (
+                {shownError && (
                     <p className="flex items-center gap-2 text-sm text-rust">
                         <CircleAlert size={16} />
-                        {error}
+                        {shownError}
                     </p>
                 )}
 

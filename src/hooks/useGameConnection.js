@@ -27,9 +27,11 @@ function applyQuestion(question) {
         timeRemaining: Math.min(question.timeLimitSeconds, Math.max(0, secondsLeft)),
         ...(isNewQuestion && {
             answeredCount: 0,
+            chosenAnswerId: null,
             lastAnswerResult: null,
             roundResults: [],
             questionFinalized: false,
+            serverError: '',
         }),
     });
 }
@@ -115,6 +117,7 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
                 useGameStore.setState({
                     playerId: player.id,
                     nickname: player.nickname,
+                    chosenAnswerId: player.chosenAnswerId,
                     lastAnswerResult: player.currentAnswerResult,
                 });
             } catch (err) {
@@ -131,10 +134,14 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
             reconnectDelay: 5000,
 
             beforeConnect: (stompClient) => {
-                if (!isHost) return;
+                if (isHost) {
+                    const token = useAuthStore.getState().token;
+                    stompClient.connectHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+                    return;
+                }
 
-                const token = useAuthStore.getState().token;
-                stompClient.connectHeaders = token ? { Authorization: `Bearer ${token}` } : {};
+                const { playerId, rejoinToken } = useGameStore.getState();
+                stompClient.connectHeaders = playerId ? { playerId: String(playerId), rejoinToken } : {};
             },
 
             onConnect: () => {
@@ -150,19 +157,27 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
                     useGameStore.setState({ leaderboard: JSON.parse(msg.body) });
                 });
 
-                client.subscribe(`/topic/game/${pinCode}/answer-result`, (msg) => {
-                    const result = JSON.parse(msg.body);
-                    const { playerId, answeredCount, addRoundResult } = useGameStore.getState();
-
-                    if (result.chosenAnswerId != null) {
-                        useGameStore.setState({ answeredCount: answeredCount + 1 });
-                    }
-                    addRoundResult(result);
-
-                    if (result.playerId === playerId) {
-                        useGameStore.setState({ lastAnswerResult: result });
-                    }
+                client.subscribe(`/topic/game/${pinCode}/answered`, (msg) => {
+                    useGameStore.setState({ answeredCount: JSON.parse(msg.body).answeredCount });
                 });
+
+                client.subscribe('/user/queue/errors', (msg) => {
+                    useGameStore.setState({ serverError: translateMessage(JSON.parse(msg.body).message) });
+                });
+
+                if (!isHost) {
+                    client.subscribe('/user/queue/answer-accepted', (msg) => {
+                        const accepted = JSON.parse(msg.body);
+
+                        if (accepted.questionId === useGameStore.getState().currentQuestion?.id) {
+                            useGameStore.setState({ chosenAnswerId: accepted.chosenAnswerId });
+                        }
+                    });
+
+                    client.subscribe('/user/queue/answer-result', (msg) => {
+                        useGameStore.setState({ lastAnswerResult: JSON.parse(msg.body) });
+                    });
+                }
 
                 client.subscribe(`/topic/game/${pinCode}/round-results`, (msg) => {
                     const results = JSON.parse(msg.body);
@@ -183,11 +198,6 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
                 client.subscribe(`/topic/game/${pinCode}/ended`, (msg) => {
                     const result = JSON.parse(msg.body);
                     useGameStore.setState({ status: 'results', leaderboard: result.leaderboard });
-                });
-
-                client.subscribe(`/topic/game/${pinCode}/error`, (msg) => {
-                    const error = JSON.parse(msg.body);
-                    console.error('Greška iz igre:', translateMessage(error.message));
                 });
 
                 syncState();
@@ -217,12 +227,11 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
     };
 
     const sendAnswer = (questionId, answerId) => {
-        const { playerId, rejoinToken, revealEndsAt } = useGameStore.getState();
-        const responseTimeMs = Math.max(0, Date.now() - revealEndsAt);
+        const { playerId, rejoinToken } = useGameStore.getState();
 
         clientRef.current?.publish({
             destination: `/app/game/${pinCode}/answer`,
-            body: JSON.stringify({ playerId, rejoinToken, questionId, answerId, responseTimeMs })
+            body: JSON.stringify({ playerId, rejoinToken, questionId, answerId })
         });
     };
 

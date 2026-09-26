@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { Hourglass, CheckCircle2, XCircle, ListOrdered } from "lucide-react";
+import { Hourglass, CheckCircle2, XCircle, ListOrdered, CircleAlert } from "lucide-react";
 import useGameStore from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameConnection";
 import { useQuestionPhase } from "../hooks/useQuestionPhase";
@@ -27,8 +27,10 @@ function PlayerGame() {
     const leaderboard = useGameStore((state) => state.leaderboard);
     const roundResults = useGameStore((state) => state.roundResults);
     const questionDeadline = useGameStore((state) => state.questionDeadline);
+    const chosenAnswerId = useGameStore((state) => state.chosenAnswerId);
+    const serverError = useGameStore((state) => state.serverError);
     const [answeredQuestionId, setAnsweredQuestionId] = useState(null);
-    const hasAnswered = answeredQuestionId === currentQuestion?.id || !!lastAnswerResult;
+    const hasAnswered = chosenAnswerId != null || (answeredQuestionId === currentQuestion?.id && !serverError);
 
     const { sendAnswer } = useGameConnection(pin);
     const phase = useQuestionPhase();
@@ -39,9 +41,17 @@ function PlayerGame() {
     );
 
     const handleAnswer = (answerId) => {
+        useGameStore.setState({ serverError: '' });
         sendAnswer(currentQuestion.id, answerId);
         setAnsweredQuestionId(currentQuestion.id);
     };
+
+    const errorMessage = serverError && (
+        <p className="flex items-center gap-2 text-sm text-rust">
+            <CircleAlert size={16} />
+            {serverError}
+        </p>
+    );
 
     if (!nickname) {
         return (
@@ -103,12 +113,17 @@ function PlayerGame() {
     }
 
     if (phase === 'stats') {
-        const noAnswer = !lastAnswerResult || lastAnswerResult.chosenAnswerId == null;
         return (
             <PageShell center>
                 <div className="flex flex-col items-center gap-4">
                     <QuestionDisplay question={currentQuestion} phase={phase} />
-                    {noAnswer ? (
+                    {errorMessage}
+                    {!lastAnswerResult ? (
+                        <p className="flex items-center gap-2 text-lg text-ink/60">
+                            <Spinner size={18} />
+                            Čekamo rezultate...
+                        </p>
+                    ) : lastAnswerResult.chosenAnswerId == null ? (
                         <p className="text-lg text-ink/60">Nisi odgovorio/la na vreme</p>
                     ) : lastAnswerResult.isCorrect ? (
                         <p className="flex items-center gap-2 font-display text-3xl text-moss">
@@ -121,9 +136,11 @@ function PlayerGame() {
                             Netačno!
                         </p>
                     )}
-                    <div className="w-full max-w-md">
-                        <QuestionStats roundResults={roundResults} answers={currentQuestion.answers} />
-                    </div>
+                    {roundResults.length > 0 && (
+                        <div className="w-full max-w-md">
+                            <QuestionStats roundResults={roundResults} answers={currentQuestion.answers} />
+                        </div>
+                    )}
                 </div>
             </PageShell>
         );
@@ -145,6 +162,8 @@ function PlayerGame() {
                         <AnswerOptions answers={shuffledAnswers} onSelect={handleAnswer} disabled={hasAnswered} />
                     </div>
                 )}
+
+                {errorMessage}
             </div>
         </PageShell>
     );

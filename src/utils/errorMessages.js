@@ -9,10 +9,13 @@ const messages = {
     'Game ended': 'Igra je završena!',
     'Game is not IN PROGRESS': 'Igra nije u toku',
     'Question is already finalized': 'Vreme za odgovor na ovo pitanje je isteklo',
+    'Time is up for this question': 'Vreme za odgovor na ovo pitanje je isteklo',
+    'Answering has not started yet': 'Još ne možeš da odgovoriš, sačekaj trenutak',
 
     // B) REST validacione poruke (po polju)
     'Username is required': 'Korisničko ime je obavezno',
     'Username must be 3-50 characters': 'Korisničko ime mora imati 3-50 karaktera',
+    "Username may contain only letters, digits, '_', '.' and '-'": 'Korisničko ime sme da sadrži samo slova, cifre i znakove _ . -',
     'Email is required': 'Email je obavezan',
     'Invalid email format': 'Nevažeći format email adrese',
     'Email max 100 characters': 'Email može imati najviše 100 karaktera',
@@ -94,6 +97,7 @@ const dynamicPatterns = [
     { re: /^Failed to generate unique PIN after (\d+) attempts$/, tr: (m) => `Nije moguće generisati jedinstveni PIN kod (${m[1]} pokušaja)` },
     { re: /^Game can only be started from WAITING status\. Current status: (.+)$/, tr: (m) => `Igra može početi samo iz statusa čekanja (trenutni status: ${m[1]})` },
     { re: /^Game must be IN_PROGRESS to advance question\. Current status: (.+)$/, tr: (m) => `Igra mora biti u toku da bi se prešlo na sledeće pitanje (trenutni status: ${m[1]})` },
+    { re: /^Game must be IN_PROGRESS to finalize unanswered players\. Current status: (.+)$/, tr: (m) => `Pitanje ne može da se zaključi jer igra nije u toku (trenutni status: ${m[1]})` },
     { re: /^Game can only be ended from IN_PROGRESS status\. Current status: (.+)$/, tr: (m) => `Igra se može završiti samo dok je u toku (trenutni status: ${m[1]})` },
     { re: /^User not found: (.+)$/, tr: (m) => `Korisnik nije pronađen: ${m[1]}` },
     { re: /^Quiz not found: (.+)$/, tr: (m) => `Kviz nije pronađen: ${m[1]}` },
