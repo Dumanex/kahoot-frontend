@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { User, ArrowRight, CircleAlert } from "lucide-react";
-import { getSession } from "../api/gameApi";
+import { joinGame } from "../api/gameApi";
 import { translateErrorResponse } from "../utils/errorMessages";
+import { savePlayer } from "../utils/playerStorage";
 import useGameStore from "../stores/gameStore";
 import PinInput from "../components/common/PinInput";
 import PageShell from "../components/layout/PageShell";
@@ -20,8 +21,6 @@ function Lobby() {
     const [error, setError] = useState(location.state?.joinError || '');
     const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
-    const setPinCode = useGameStore((state) => state.setPinCode);
-    const setNicknameInStore = useGameStore((state) => state.setNickname);
     const resetGame = useGameStore((state) => state.reset);
 
     const handleSubmit = async (e) => {
@@ -30,20 +29,12 @@ function Lobby() {
         setSubmitting(true);
 
         try {
-            const response = await getSession(pin);
-
-            if (response.data.status !== 'WAITING') {
-                if (response.data.status !== 'IN_PROGRESS') {
-                    setError('Igra je završena!');
-                    return;
-                }
-                setError('Igra je već počela');
-                return;
-            }
+            const response = await joinGame(pin, nickname);
+            const player = { playerId: response.data.id, nickname: response.data.nickname, rejoinToken: response.data.rejoinToken };
 
             resetGame();
-            setPinCode(pin);
-            setNicknameInStore(nickname);
+            useGameStore.setState({ pinCode: pin, ...player });
+            savePlayer(pin, player);
             navigate(`/play/${pin}`);
         } catch (err) {
             setError(translateErrorResponse(err.response?.data));

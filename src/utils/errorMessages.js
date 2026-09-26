@@ -8,6 +8,7 @@ const messages = {
     'Game already started': 'Igra je već počela',
     'Game ended': 'Igra je završena!',
     'Game is not IN PROGRESS': 'Igra nije u toku',
+    'Question is already finalized': 'Vreme za odgovor na ovo pitanje je isteklo',
 
     // B) REST validacione poruke (po polju)
     'Username is required': 'Korisničko ime je obavezno',
@@ -38,6 +39,8 @@ const messages = {
     'Response time is required': 'Vreme odgovora je obavezno',
     'Response time must be positive': 'Vreme odgovora mora biti pozitivan broj',
     'Response time max 5 minutes': 'Vreme odgovora može biti najviše 5 minuta',
+    'Player id is required': 'ID igrača je obavezan',
+    'Rejoin token is required': 'Podaci za povratak u igru nedostaju',
     'Validation failed': 'Podaci nisu validni',
 
      // C) REST poslovne/logičke - fiksne
@@ -60,6 +63,7 @@ const messages = {
     'Nickname is already taken in this game': 'Nadimak je već zauzet u ovoj igri',
     'This record was modified concurrently, please retry': 'Podaci su izmenjeni u međuvremenu, pokušaj ponovo',
     'Cannot delete an answer that has already been chosen by a player': 'Ne možeš obrisati odgovor koji je igrač već izabrao',
+    'Invalid rejoin token': 'Povratak u igru nije uspeo, pridruži se ponovo',
 
      // D) Fiksne HTTP fraze
     'Not Found': 'Nije pronađeno',
@@ -82,11 +86,10 @@ const messages = {
     'Failed to store file': 'Neuspešno čuvanje fajla na serveru',
 };
 
-const NICKNAME_TAKEN_RE = /^Nickname '(.+)' is already taken in this game$/;
-
 const dynamicPatterns = [
-    { re: NICKNAME_TAKEN_RE, tr: (m) => `Nadimak "${m[1]}" je već zauzet u ovoj igri` },
-    { re: /^Can only join while game is WAITING\. Current status: (.+)$/, tr: (m) => `Igri se može pridružiti samo dok čeka igrače (trenutni status: ${m[1]})` },
+    { re: /^Nickname '(.+)' is already taken in this game$/, tr: (m) => `Nadimak "${m[1]}" je već zauzet u ovoj igri` },
+    { re: /^Can only join while game is WAITING\. Current status: (.+)$/, tr: (m) => (m[1] === 'COMPLETED' ? 'Igra je završena!' : 'Igra je već počela') },
+    { re: /^Can only rejoin while game is WAITING or IN_PROGRESS\. Current status: (.+)$/, tr: () => 'Igra je završena!' },
     { re: /^Game is not IN_PROGRESS\. Current status: (.+)$/, tr: (m) => `Igra nije u toku (trenutni status: ${m[1]})` },
     { re: /^Failed to generate unique PIN after (\d+) attempts$/, tr: (m) => `Nije moguće generisati jedinstveni PIN kod (${m[1]} pokušaja)` },
     { re: /^Game can only be started from WAITING status\. Current status: (.+)$/, tr: (m) => `Igra može početi samo iz statusa čekanja (trenutni status: ${m[1]})` },
@@ -116,11 +119,6 @@ export function translateMessage(message) {
     }
   
     return 'Došlo je do greške, pokušaj ponovo';
-}
-
-export function extractTakenNickname(message) {
-    const match = message && message.match(NICKNAME_TAKEN_RE);
-    return match ? match[1] : null;
 }
 
 export function isNotQuizCreatorError(message) {

@@ -1,6 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { getSession } from "../api/gameApi";
-import { translateErrorResponse } from "../utils/errorMessages";
+import { useParams } from "react-router-dom";
 import { Hourglass, CheckCircle2, XCircle, ListOrdered } from "lucide-react";
 import useGameStore from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameConnection";
@@ -12,7 +10,7 @@ import AnswerOptions from "../components/game/AnswerOptions";
 import Timer from "../components/common/Timer";
 import QuestionStats from "../components/game/QuestionStats";
 import Podium from "../components/game/Podium";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import PageShell from "../components/layout/PageShell";
 import Card from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
@@ -28,42 +26,17 @@ function PlayerGame() {
     const lastAnswerResult = useGameStore((state) => state.lastAnswerResult);
     const leaderboard = useGameStore((state) => state.leaderboard);
     const roundResults = useGameStore((state) => state.roundResults);
+    const questionDeadline = useGameStore((state) => state.questionDeadline);
     const [answeredQuestionId, setAnsweredQuestionId] = useState(null);
-    const hasAnswered = answeredQuestionId === currentQuestion?.id;
+    const hasAnswered = answeredQuestionId === currentQuestion?.id || !!lastAnswerResult;
 
-    const navigate = useNavigate();
-
-    const { sendAnswer, markAnswerStart } = useGameConnection(nickname ? pin : null);
+    const { sendAnswer } = useGameConnection(pin);
     const phase = useQuestionPhase();
-
-    useEffect(() => {
-        if (nickname) return;
-
-        getSession(pin)
-            .then((response) => {
-                const status = response.data.status;
-
-                if (status === 'COMPLETED') {
-                    navigate(`/results/${pin}`, { replace: true });
-                } else if (status === 'IN_PROGRESS') {
-                    navigate('/join', { replace: true, state: { joinError: 'Veza sa partijom je prekinuta, a partija je već u toku.' } });
-                } else {
-                    navigate('/join', { replace: true, state: { pin, joinError: 'Veza sa partijom je prekinuta. Pridruži se ponovo sa novim nadimkom.' } });
-                }
-            })
-            .catch((err) => navigate('/join', { replace: true, state: { joinError: translateErrorResponse(err.response?.data) } }));
-    }, [nickname, pin, navigate]);
 
     const shuffledAnswers = useMemo(
         () => (currentQuestion ? shuffle(currentQuestion.answers) : []),
         [currentQuestion?.id]
     );
-
-    useEffect(() => {
-        if (phase === 'answering') {
-            markAnswerStart();
-        }
-    }, [phase]);
 
     const handleAnswer = (answerId) => {
         sendAnswer(currentQuestion.id, answerId);
@@ -159,7 +132,7 @@ function PlayerGame() {
     return (
         <PageShell center>
             <div className="flex w-full max-w-2xl flex-col items-center gap-6">
-                <Timer seconds={currentQuestion.timeLimitSeconds} />
+                <Timer deadline={questionDeadline} />
                 <QuestionDisplay question={currentQuestion} phase={phase} />
 
                 {hasAnswered ? (

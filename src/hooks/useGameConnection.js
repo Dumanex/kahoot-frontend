@@ -3,27 +3,128 @@ import { useNavigate } from "react-router-dom";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import useGameStore from "../stores/gameStore";
-import { translateMessage, extractTakenNickname } from "../utils/errorMessages";
 import useAuthStore from "../stores/authStore"
-import { saveResults } from "../utils/resultsStorage";
+import { getGameState, rejoinGame } from "../api/gameApi";
+import { translateMessage, translateErrorResponse } from "../utils/errorMessages";
+import { loadPlayer, clearPlayer } from "../utils/playerStorage";
+
+const REVEAL_MS = 3000;
+
+function applyQuestion(question) {
+    const offset = question.serverTime ? Date.now() - question.serverTime : 0;
+    const startedAt = question.questionStartedAt ? question.questionStartedAt + offset : Date.now();
+    const revealEndsAt = startedAt + REVEAL_MS;
+    const questionDeadline = revealEndsAt + question.timeLimitSeconds * 1000;
+    const secondsLeft = Math.ceil((questionDeadline - Date.now()) / 1000);
+
+    const isNewQuestion = useGameStore.getState().currentQuestion?.id !== question.id;
+
+    useGameStore.setState({
+        status: 'playing',
+        currentQuestion: question,
+        revealEndsAt,
+        questionDeadline,
+        timeRemaining: Math.min(question.timeLimitSeconds, Math.max(0, secondsLeft)),
+        ...(isNewQuestion && {
+            answeredCount: 0,
+            lastAnswerResult: null,
+            roundResults: [],
+            questionFinalized: false,
+        }),
+    });
+}
 
 export function useGameConnection(pinCode, { isHost = false } = {}) {
     const clientRef = useRef(null);
-    const questionStartRef = useRef(null);
     const navigate = useNavigate();
-
-    const setPlayerId = useGameStore((s) => s.setPlayerId);
-    const setPlayers = useGameStore((s) => s.setPlayers);
-    const setCurrentQuestion = useGameStore((s) => s.setCurrentQuestion);
-    const setTimer = useGameStore((s) => s.setTimer);
-    const setLeaderboard = useGameStore((s) => s.setLeaderboard);
-    const setStatus = useGameStore((s) => s.setStatus);
-    const setAnsweredCount = useGameStore((s) => s.setAnsweredCount);
-    const setLastAnswerResult = useGameStore((s) => s.setLastAnswerResult);
-    const addRoundResult = useGameStore((s) => s.addRoundResult);
 
     useEffect(() => {
         if (!pinCode) return;
+
+        if (!isHost) {
+            const { pinCode: storedPin, playerId } = useGameStore.getState();
+
+            if (storedPin !== pinCode || !playerId) {
+                const saved = loadPlayer(pinCode);
+
+                if (!saved) {
+                    navigate('/join', { replace: true, state: { pin: pinCode } });
+                    return;
+                }
+
+                useGameStore.getState().reset();
+                useGameStore.setState({
+                    pinCode,
+                    playerId: saved.playerId,
+                    nickname: saved.nickname,
+                    rejoinToken: saved.rejoinToken,
+                });
+            }
+        }
+
+        const leaveAsPlayer = (message) => {
+            clearPlayer(pinCode);
+            useGameStore.getState().reset();
+            navigate('/join', { replace: true, state: { joinError: message } });
+        };
+
+        const syncState = async () => {
+            let state;
+
+            try {
+                state = (await getGameState(pinCode)).data;
+            } catch (err) {
+                const message = translateErrorResponse(err.response?.data);
+
+                if (isHost) {
+                    navigate('/dashboard', { replace: true, state: { modalError: message } });
+                } else {
+                    leaveAsPlayer(message);
+                }
+                return;
+            }
+
+            useGameStore.setState({
+                quizTitle: state.quizTitle,
+                players: state.players,
+                leaderboard: state.leaderboard,
+            });
+
+            if (state.status === 'COMPLETED') {
+                useGameStore.setState({ status: 'results' });
+                return;
+            }
+
+            if (state.status === 'IN_PROGRESS' && state.currentQuestion) {
+                applyQuestion(state.currentQuestion);
+                useGameStore.setState({
+                    answeredCount: state.answeredCount,
+                    questionFinalized: state.questionFinalized,
+                    ...(state.roundResults && { roundResults: state.roundResults }),
+                });
+            } else {
+                useGameStore.setState({ status: 'idle' });
+            }
+
+            if (isHost) return;
+
+            const { playerId, rejoinToken } = useGameStore.getState();
+
+            try {
+                const player = (await rejoinGame(pinCode, playerId, rejoinToken)).data;
+                useGameStore.setState({
+                    playerId: player.id,
+                    nickname: player.nickname,
+                    lastAnswerResult: player.currentAnswerResult,
+                });
+            } catch (err) {
+                const statusCode = err.response?.status;
+
+                if (statusCode === 403 || statusCode === 404) {
+                    leaveAsPlayer(translateErrorResponse(err.response?.data));
+                }
+            }
+        };
 
         const client = new Client({
             webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
@@ -38,76 +139,58 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
 
             onConnect: () => {
                 client.subscribe(`/topic/game/${pinCode}/players`, (msg) => {
-                    const players = JSON.parse(msg.body);
-                    setPlayers(players);
-
-                    const { playerId, nickname } = useGameStore.getState();
-                    if (!playerId && nickname) {
-                        const me = players.find((p) => p.nickname === nickname);
-
-                        if (me) setPlayerId(me.id);
-                    }
+                    useGameStore.setState({ players: JSON.parse(msg.body) });
                 });
 
                 client.subscribe(`/topic/game/${pinCode}/question`, (msg) => {
-                    const question = JSON.parse(msg.body);
-                    setCurrentQuestion(question);
-                    setTimer(question.timeLimitSeconds);
-                    setAnsweredCount(0);
-                    setLastAnswerResult(null);
-                    useGameStore.setState({ roundResults: [] });
-                    questionStartRef.current = null;
+                    applyQuestion(JSON.parse(msg.body));
                 });
 
                 client.subscribe(`/topic/game/${pinCode}/leaderboard`, (msg) => {
-                    setLeaderboard(JSON.parse(msg.body));
+                    useGameStore.setState({ leaderboard: JSON.parse(msg.body) });
                 });
 
                 client.subscribe(`/topic/game/${pinCode}/answer-result`, (msg) => {
                     const result = JSON.parse(msg.body);
-                    const { playerId, answeredCount } = useGameStore.getState();
-                    setAnsweredCount(answeredCount + 1);
+                    const { playerId, answeredCount, addRoundResult } = useGameStore.getState();
+
+                    if (result.chosenAnswerId != null) {
+                        useGameStore.setState({ answeredCount: answeredCount + 1 });
+                    }
                     addRoundResult(result);
 
                     if (result.playerId === playerId) {
-                        setLastAnswerResult(result);
+                        useGameStore.setState({ lastAnswerResult: result });
                     }
                 });
 
+                client.subscribe(`/topic/game/${pinCode}/round-results`, (msg) => {
+                    const results = JSON.parse(msg.body);
+                    const { playerId } = useGameStore.getState();
+                    const mine = results.find((r) => r.playerId === playerId);
+
+                    useGameStore.setState({
+                        roundResults: results,
+                        questionFinalized: true,
+                        ...(mine && { lastAnswerResult: mine }),
+                    });
+                });
+
                 client.subscribe(`/topic/game/${pinCode}/started`, () => {
-                    setStatus('playing');
+                    useGameStore.setState({ status: 'playing' });
                 });
 
                 client.subscribe(`/topic/game/${pinCode}/ended`, (msg) => {
                     const result = JSON.parse(msg.body);
-                    saveResults(pinCode, result.leaderboard);
-                    setStatus('results');
-                    setLeaderboard(result.leaderboard);
+                    useGameStore.setState({ status: 'results', leaderboard: result.leaderboard });
                 });
 
                 client.subscribe(`/topic/game/${pinCode}/error`, (msg) => {
                     const error = JSON.parse(msg.body);
-                    const translated = translateMessage(error.message);
-                    console.error('Greška iz igre:', translated);
-
-                    if (isHost) return;
-
-                    const takenNickname = extractTakenNickname(error.message);
-                    const { nickname: myNickname, playerId } = useGameStore.getState();
-
-                    if (takenNickname && takenNickname === myNickname && playerId == null) {
-                        useGameStore.getState().reset();
-                        navigate('/join', { state: { pin: pinCode, joinError: translated } });
-                    }
+                    console.error('Greška iz igre:', translateMessage(error.message));
                 });
 
-                if (!isHost) {
-                    const { nickname } = useGameStore.getState();
-                    client.publish({
-                        destination: `/app/game/${pinCode}/join`,
-                        body: JSON.stringify({ nickname })
-                    });
-                }
+                syncState();
             },
 
             onStompError: (frame) => {
@@ -124,11 +207,7 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
         clientRef.current = client;
 
         return () => client.deactivate();
-    }, [pinCode, isHost]);
-
-    const markAnswerStart = () => {
-        questionStartRef.current = Date.now();
-    };
+    }, [pinCode, isHost, navigate]);
 
     const finalizeQuestion = () => {
         clientRef.current?.publish({
@@ -138,15 +217,14 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
     };
 
     const sendAnswer = (questionId, answerId) => {
-        const responseTimeMs = questionStartRef.current ? Date.now() - questionStartRef.current : 0;
-
-        const { playerId } = useGameStore.getState();
+        const { playerId, rejoinToken, revealEndsAt } = useGameStore.getState();
+        const responseTimeMs = Math.max(0, Date.now() - revealEndsAt);
 
         clientRef.current?.publish({
             destination: `/app/game/${pinCode}/answer`,
-            body: JSON.stringify({playerId, questionId, answerId, responseTimeMs})
+            body: JSON.stringify({ playerId, rejoinToken, questionId, answerId, responseTimeMs })
         });
     };
 
-    return { sendAnswer, markAnswerStart, finalizeQuestion };
+    return { sendAnswer, finalizeQuestion };
 }

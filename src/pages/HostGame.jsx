@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Play, ArrowRight, Flag, Users, CheckCircle2, ListOrdered, CircleAlert } from "lucide-react";
-import { getSession, startGame, nextQuestion, endGame } from "../api/gameApi";
+import { startGame, nextQuestion, endGame } from "../api/gameApi";
 import { translateErrorResponse } from "../utils/errorMessages";
 import { everyoneScoredZero } from "../utils/ranking";
 import useGameStore from "../stores/gameStore";
@@ -18,9 +18,6 @@ import Modal from "../components/ui/Modal";
 
 function HostGame() {
     const { pin } = useParams();
-    const navigate = useNavigate();
-    const [quizTitle, setQuizTitle] = useState('');
-    const [sessionStatus, setSessionStatus] = useState(null);
     const [error, setError] = useState('');
     const [startRequested, setStartRequested] = useState(false);
     const [nextRequestedFor, setNextRequestedFor] = useState(null);
@@ -33,23 +30,11 @@ function HostGame() {
     const answeredCount = useGameStore((state) => state.answeredCount);
     const leaderboard = useGameStore((state) => state.leaderboard);
     const roundResults = useGameStore((state) => state.roundResults);
+    const quizTitle = useGameStore((state) => state.quizTitle);
+    const questionDeadline = useGameStore((state) => state.questionDeadline);
 
     const { finalizeQuestion } = useGameConnection(pin, { isHost: true });
     const phase = useQuestionPhase();
-
-    useEffect(() => {
-        getSession(pin)
-            .then((response) => {
-                if (response.data.status === 'COMPLETED') {
-                    navigate(`/results/${pin}`, { replace: true });
-                    return;
-                }
-
-                setQuizTitle(response.data.quizTitle);
-                setSessionStatus(response.data.status);
-            })
-            .catch((err) => navigate('/dashboard', { replace: true, state: { modalError: translateErrorResponse(err.response?.data) } }));
-    }, [pin, navigate]);
 
     useEffect(() => {
         if (phase === 'stats' && currentQuestion) {
@@ -121,30 +106,6 @@ function HostGame() {
         );
     }
 
-    if (status !== 'playing' && sessionStatus === 'IN_PROGRESS') {
-        return (
-            <PageShell center>
-                <div className="flex flex-col items-center gap-6 text-center">
-                    <h2 className="font-display text-2xl">{quizTitle}</h2>
-                    <p className="max-w-sm text-ink/60">
-                        Partija je već u toku, ali posle osvežavanja stranice još ne može da se nastavi. Možeš da je završiš i vidiš rezultate.
-                    </p>
-
-                    {error && (
-                        <p className="flex items-center gap-2 text-sm text-rust">
-                            <CircleAlert size={16} />
-                            {error}
-                        </p>
-                    )}
-
-                    <Button variant="danger" icon={Flag} onClick={() => setEndConfirmOpen(true)} disabled={ending}>Završi igru</Button>
-                </div>
-
-                {endModal}
-            </PageShell>
-        );
-    }
-
     if (status !== 'playing') {
         return (
             <PageShell center>
@@ -185,7 +146,7 @@ function HostGame() {
                 {currentQuestion && <QuestionDisplay question={currentQuestion} phase={phase} />}
 
                 {phase === "answering" && currentQuestion && (
-                    <Timer seconds={currentQuestion.timeLimitSeconds} />
+                    <Timer deadline={questionDeadline} />
                 )}
 
                 {currentQuestion && phase === 'stats' ? (

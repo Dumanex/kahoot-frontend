@@ -2,25 +2,27 @@ import { useEffect } from "react";
 import { Clock } from "lucide-react";
 import useGameStore from "../../stores/gameStore";
 
-function Timer({seconds}) {
+function Timer({ deadline }) {
     const timeRemaining = useGameStore((s) => s.timeRemaining);
     const setTimer = useGameStore((s) => s.setTimer);
 
     useEffect(() => {
-        const deadline = Date.now() + seconds * 1000;
-        setTimer(seconds);
+        const tick = () => {
+            const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+            setTimer(remaining);
+            return remaining;
+        };
+
+        if (tick() <= 0) return;
 
         const interval = setInterval(() => {
-            const remaining = Math.max(0, Math.round((deadline - Date.now()) / 1000));
-            setTimer(remaining);
-
-            if (remaining <= 0) {
+            if (tick() <= 0) {
                 clearInterval(interval);
             }
-        }, 1000);
+        }, 250);
 
         return () => clearInterval(interval);
-    }, [seconds]);
+    }, [deadline, setTimer]);
 
     const urgent = timeRemaining <= 3;
 

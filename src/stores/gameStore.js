@@ -1,19 +1,28 @@
 import { create } from "zustand";
 
-const useGameStore = create((set) => ({
+const initialState = {
     pinCode: null,
     nickname: null,
     playerId: null,
-    isHost: null,
+    rejoinToken: null,
+    isHost: false,
 
     status: "idle",
+    quizTitle: '',
     currentQuestion: null,
+    revealEndsAt: 0,
+    questionDeadline: 0,
+    questionFinalized: false,
     timeRemaining: 0,
     players: [],
     leaderboard: [],
     answeredCount: 0,
     lastAnswerResult: null,
     roundResults: [],
+};
+
+const useGameStore = create((set) => ({
+    ...initialState,
 
     setPinCode: (pin) => set({ pinCode: pin }),
     setNickname: (name) => set({ nickname: name }),
@@ -29,13 +38,8 @@ const useGameStore = create((set) => ({
     addRoundResult: (result) => set((state) => ({
       roundResults: [...state.roundResults.filter((r) => r.playerId !== result.playerId), result]
     })),
-    
-    reset: () => set({
-      pinCode: null, nickname: null, playerId: null, isHost: false,
-      status: 'idle', currentQuestion: null, timeRemaining: 0,
-      players: [], leaderboard: [], answeredCount: 0, lastAnswerResult: null,
-      roundResults: []
-    })
+
+    reset: () => set(initialState)
 }));
 
 export default useGameStore;
