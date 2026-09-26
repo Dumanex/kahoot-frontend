@@ -13,7 +13,6 @@ function Podium({leaderboard}) {
 
     return (
         <div>
-            <h2 className="mb-6 text-center font-display text-2xl">Top 3</h2>
             <div className="flex items-end justify-center gap-4">
                 {order.map((entry) => {
                     if (!entry) return null;

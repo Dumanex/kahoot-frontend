@@ -16,6 +16,7 @@ function Dashboard() {
     const [quizzes, setQuizzes] = useState([]);
     const [error, setError] = useState('');
     const [ownerError, setOwnerError] = useState(location.state?.ownerError || '');
+    const [hosting, setHosting] = useState(false);
     const logout = useAuthStore((state) => state.logout);
     const resetGame = useGameStore((state) => state.reset);
     const navigate = useNavigate();
@@ -39,12 +40,14 @@ function Dashboard() {
 
     const handleHost = async (quizId, isPublic) => {
           setError('');
+          setHosting(true);
           try {
               const response = await createSession(quizId, isPublic ? 'PUBLIC' : 'PRIVATE');
               resetGame();
               navigate(`/host/${response.data.pinCode}`);
           } catch {
               setError("Neuspešno pokretanje igre");
+              setHosting(false);
           }
       };
 
@@ -79,7 +82,7 @@ function Dashboard() {
             ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {quizzes.map((quiz) => (
-                        <QuizCard key={quiz.id} quiz={quiz} onDelete={handleDelete} onHost={handleHost} />
+                        <QuizCard key={quiz.id} quiz={quiz} onDelete={handleDelete} onHost={handleHost} hostDisabled={hosting} />
                     ))}
                 </div>
             )}

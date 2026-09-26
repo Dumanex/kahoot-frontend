@@ -23,6 +23,7 @@ function QuizEditor() {
     const [error, setError] = useState('');
     const [editingQuestion, setEditingQuestion] = useState(null);
     const [deleteError, setDeleteError] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
       if (!id) return;
@@ -52,6 +53,8 @@ function QuizEditor() {
 
       const payload = { title, description, timePerQuestion: Number(timePerQuestion) };
 
+      setSubmitting(true);
+
       try {
         if (isNew) {
           const response = await createQuiz(payload);
@@ -61,6 +64,8 @@ function QuizEditor() {
         }
       } catch (err) {
         setError(translateErrorResponse(err.response?.data));
+      } finally {
+        setSubmitting(false);
       }
     };
 
@@ -118,7 +123,7 @@ function QuizEditor() {
                         required
                     />
 
-                    <Button type='submit' icon={Save} className="self-start">Sačuvaj kviz</Button>
+                    <Button type='submit' icon={Save} className="self-start" disabled={submitting}>Sačuvaj kviz</Button>
                 </form>
             </Card>
 

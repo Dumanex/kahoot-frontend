@@ -18,6 +18,7 @@ function Lobby() {
     const [pin, setPin] = useState(prefilledPin);
     const [nickname, setNickname] = useState('');
     const [error, setError] = useState(location.state?.joinError || '');
+    const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
     const setPinCode = useGameStore((state) => state.setPinCode);
     const setNicknameInStore = useGameStore((state) => state.setNickname);
@@ -26,6 +27,7 @@ function Lobby() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSubmitting(true);
 
         try {
             const response = await getSession(pin);
@@ -45,6 +47,8 @@ function Lobby() {
             navigate(`/play/${pin}`);
         } catch (err) {
             setError(translateErrorResponse(err.response?.data));
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -65,7 +69,7 @@ function Lobby() {
                         maxLength={30}
                         required
                     />
-                    <Button type="submit" size="lg" icon={ArrowRight} className="w-full">Pridruži se</Button>
+                    <Button type="submit" size="lg" icon={ArrowRight} className="w-full" disabled={submitting}>Pridruži se</Button>
                 </form>
 
                 {error && (

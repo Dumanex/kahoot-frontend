@@ -28,6 +28,7 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
     const [answers, setAnswers] = useState(question?.answers?.map((a) => ({ id: a.id, answerText: a.answerText, isCorrect: a.isCorrect })) || emptyAnswers(2));
     const [error, setError] = useState('');
     const [uploading, setUploading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
     const handleTypeChange = (newType) => {
       setQuestionType(newType);
@@ -106,6 +107,8 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
             }))
         };
 
+        setSubmitting(true);
+
         try {
             if (question) {
                 await updateQuestion(question.id, payload);
@@ -116,6 +119,8 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
             onSaved();
         } catch (err) {
             setError(translateErrorResponse(err.response?.data));
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -229,7 +234,7 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
                 )}
 
                 <div className="flex gap-3">
-                    <Button type="submit" icon={Save} disabled={uploading}>Sačuvaj pitanje</Button>
+                    <Button type="submit" icon={Save} disabled={uploading || submitting}>Sačuvaj pitanje</Button>
                     <Button type="button" variant="secondary" icon={X} onClick={onCancel}>Otkaži</Button>
                 </div>
             </form>

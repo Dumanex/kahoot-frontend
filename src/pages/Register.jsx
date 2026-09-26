@@ -14,12 +14,14 @@ function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const authLogin = useAuthStore((state) => state.login);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
 
     try {
       const response = await register(username, email, password);
@@ -28,6 +30,8 @@ function Register() {
       navigate('/dashboard');
     } catch (err) {
       setError(translateErrorResponse(err.response?.data));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -59,7 +63,7 @@ function Register() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          <Button type="submit" icon={UserPlus} className="w-full">Registruj se</Button>
+          <Button type="submit" icon={UserPlus} className="w-full" disabled={submitting}>Registruj se</Button>
         </form>
 
         {error && (

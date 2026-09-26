@@ -14,11 +14,16 @@ import Timer from "../components/common/Timer";
 import PageShell from "../components/layout/PageShell";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
+import Modal from "../components/ui/Modal";
 
 function HostGame() {
     const { pin } = useParams();
     const [quizTitle, setQuizTitle] = useState('');
     const [error, setError] = useState('');
+    const [startRequested, setStartRequested] = useState(false);
+    const [nextRequestedFor, setNextRequestedFor] = useState(null);
+    const [endConfirmOpen, setEndConfirmOpen] = useState(false);
+    const [ending, setEnding] = useState(false);
 
     const players = useGameStore((state) => state.players);
     const status = useGameStore((state) => state.status);
@@ -42,28 +47,36 @@ function HostGame() {
 
     const handleStart = async () => {
         setError('');
+        setStartRequested(true);
         try {
             await startGame(pin);
         } catch (err) {
             setError(translateErrorResponse(err.response?.data));
+            setStartRequested(false);
         }
     };
 
     const handleNext = async () => {
         setError('');
+        setNextRequestedFor(currentQuestion.id);
         try {
             await nextQuestion(pin);
         } catch (err) {
             setError(translateErrorResponse(err.response?.data));
+            setNextRequestedFor(null);
         }
     };
 
     const handleEnd = async () => {
         setError('');
+        setEnding(true);
         try {
             await endGame(pin);
         } catch (err) {
             setError(translateErrorResponse(err.response?.data));
+            setEnding(false);
+        } finally {
+            setEndConfirmOpen(false);
         }
     };
 
@@ -104,7 +117,7 @@ function HostGame() {
                         ))}
                     </div>
 
-                    <Button size="lg" icon={Play} onClick={handleStart} disabled={players.length === 0}>Počni igru</Button>
+                    <Button size="lg" icon={Play} onClick={handleStart} disabled={players.length === 0 || startRequested}>Počni igru</Button>
                 </div>
             </PageShell>
         );
@@ -135,10 +148,27 @@ function HostGame() {
                 )}
 
                 <div className="flex gap-3">
-                    <Button icon={ArrowRight} onClick={handleNext} disabled={phase !== 'stats'}>Sledeće pitanje</Button>
-                    <Button variant="danger" icon={Flag} onClick={handleEnd}>Završi igru</Button>
+                    <Button
+                        icon={ArrowRight}
+                        onClick={handleNext}
+                        disabled={phase !== 'stats' || nextRequestedFor === currentQuestion?.id}
+                    >
+                        Sledeće pitanje
+                    </Button>
+                    <Button variant="danger" icon={Flag} onClick={() => setEndConfirmOpen(true)} disabled={ending}>Završi igru</Button>
                 </div>
             </div>
+
+            <Modal
+                open={endConfirmOpen}
+                onClose={() => setEndConfirmOpen(false)}
+                onConfirm={handleEnd}
+                confirmLabel="Završi igru"
+                confirmDisabled={ending}
+                title="Završi igru?"
+            >
+                Igra će se odmah završiti za sve igrače i prikazaće se konačni rezultati.
+            </Modal>
         </PageShell>
     );
 }

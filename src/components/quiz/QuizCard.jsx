@@ -5,7 +5,7 @@ import Card from "../ui/Card";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 
-function QuizCard({quiz, onDelete, onHost}) {
+function QuizCard({quiz, onDelete, onHost, hostDisabled}) {
     const [isPublic, setIsPublic] = useState(false);
 
     return (
@@ -33,7 +33,7 @@ function QuizCard({quiz, onDelete, onHost}) {
         </label>
 
         <div className="flex items-center justify-between border-t border-line pt-3">
-          <Button icon={Play} onClick={() => onHost(quiz.id, isPublic)}>Host</Button>
+          <Button icon={Play} onClick={() => onHost(quiz.id, isPublic)} disabled={hostDisabled}>Host</Button>
           <Button variant="danger" icon={Trash2} onClick={() => onDelete(quiz.id)}>Obriši</Button>
         </div>
       </Card>

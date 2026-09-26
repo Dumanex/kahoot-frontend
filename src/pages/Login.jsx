@@ -13,12 +13,14 @@ function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [submitting, setSubmitting] = useState(false);
     const navigate = useNavigate();
     const authLogin = useAuthStore((state) => state.login);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setSubmitting(true);
 
         try {
             const response = await login(username, password);
@@ -27,6 +29,8 @@ function Login() {
             navigate('/dashboard');
         } catch (err) {
             setError(translateErrorResponse(err.response?.data));
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -52,7 +56,7 @@ function Login() {
                         required
                     />
 
-                    <Button type="submit" icon={LogIn} className="w-full">Prijavi se</Button>
+                    <Button type="submit" icon={LogIn} className="w-full" disabled={submitting}>Prijavi se</Button>
                 </form>
 
                 {error && (
