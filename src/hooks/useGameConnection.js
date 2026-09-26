@@ -5,6 +5,7 @@ import SockJS from "sockjs-client";
 import useGameStore from "../stores/gameStore";
 import useAuthStore from "../stores/authStore"
 import { getGameState, rejoinGame } from "../api/gameApi";
+import { API_URL } from "../api/axios";
 import { translateMessage, translateErrorResponse } from "../utils/errorMessages";
 import { loadPlayer, clearPlayer } from "../utils/playerStorage";
 
@@ -130,7 +131,7 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
         };
 
         const client = new Client({
-            webSocketFactory: () => new SockJS("http://localhost:8080/ws"),
+            webSocketFactory: () => new SockJS(`${API_URL}/ws`),
             reconnectDelay: 5000,
 
             beforeConnect: (stompClient) => {
