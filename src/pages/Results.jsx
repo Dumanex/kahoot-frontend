@@ -1,12 +1,16 @@
+import { useParams } from "react-router-dom";
 import { Inbox, Home } from "lucide-react";
 import useGameStore from "../stores/gameStore";
+import { loadResults } from "../utils/resultsStorage";
 import Leaderboard from "../components/game/Leaderboard";
 import PageShell from "../components/layout/PageShell";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 
 function Results() {
-    const leaderboard = useGameStore((state) => state.leaderboard);
+    const { pin } = useParams();
+    const storeLeaderboard = useGameStore((state) => state.leaderboard);
+    const leaderboard = loadResults(pin) ?? storeLeaderboard;
 
     return (
         <PageShell center>
@@ -16,7 +20,7 @@ function Results() {
                 {leaderboard.length === 0 ? (
                     <Card className="flex items-center gap-2 text-ink/50">
                         <Inbox size={18} />
-                        <span>Nema podataka - otvori ovu stranicu preko dugmeta na kraju partije.</span>
+                        <span>Rezultati ove partije nisu dostupni.</span>
                     </Card>
                 ) : (
                     <Leaderboard entries={leaderboard} />

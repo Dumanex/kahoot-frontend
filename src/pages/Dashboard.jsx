@@ -15,7 +15,7 @@ function Dashboard() {
     const location = useLocation();
     const [quizzes, setQuizzes] = useState([]);
     const [error, setError] = useState('');
-    const [ownerError, setOwnerError] = useState(location.state?.ownerError || '');
+    const [modalError, setModalError] = useState(location.state?.modalError || '');
     const [hosting, setHosting] = useState(false);
     const logout = useAuthStore((state) => state.logout);
     const resetGame = useGameStore((state) => state.reset);
@@ -53,8 +53,8 @@ function Dashboard() {
 
     return (
         <PageShell>
-            <Modal open={!!ownerError} onClose={() => setOwnerError('')}>
-                {ownerError}
+            <Modal open={!!modalError} onClose={() => setModalError('')}>
+                {modalError}
             </Modal>
 
             <div className="mb-6 flex items-center justify-between">

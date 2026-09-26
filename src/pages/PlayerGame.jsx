@@ -1,4 +1,6 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { getSession } from "../api/gameApi";
+import { translateErrorResponse } from "../utils/errorMessages";
 import { Hourglass, CheckCircle2, XCircle, ListOrdered } from "lucide-react";
 import useGameStore from "../stores/gameStore";
 import { useGameConnection } from "../hooks/useGameConnection";
@@ -29,8 +31,28 @@ function PlayerGame() {
     const [answeredQuestionId, setAnsweredQuestionId] = useState(null);
     const hasAnswered = answeredQuestionId === currentQuestion?.id;
 
-    const { sendAnswer, markAnswerStart } = useGameConnection(pin);
+    const navigate = useNavigate();
+
+    const { sendAnswer, markAnswerStart } = useGameConnection(nickname ? pin : null);
     const phase = useQuestionPhase();
+
+    useEffect(() => {
+        if (nickname) return;
+
+        getSession(pin)
+            .then((response) => {
+                const status = response.data.status;
+
+                if (status === 'COMPLETED') {
+                    navigate(`/results/${pin}`, { replace: true });
+                } else if (status === 'IN_PROGRESS') {
+                    navigate('/join', { replace: true, state: { joinError: 'Veza sa partijom je prekinuta, a partija je već u toku.' } });
+                } else {
+                    navigate('/join', { replace: true, state: { pin, joinError: 'Veza sa partijom je prekinuta. Pridruži se ponovo sa novim nadimkom.' } });
+                }
+            })
+            .catch((err) => navigate('/join', { replace: true, state: { joinError: translateErrorResponse(err.response?.data) } }));
+    }, [nickname, pin, navigate]);
 
     const shuffledAnswers = useMemo(
         () => (currentQuestion ? shuffle(currentQuestion.answers) : []),
@@ -47,6 +69,14 @@ function PlayerGame() {
         sendAnswer(currentQuestion.id, answerId);
         setAnsweredQuestionId(currentQuestion.id);
     };
+
+    if (!nickname) {
+        return (
+            <PageShell center>
+                <Spinner />
+            </PageShell>
+        );
+    }
 
     if (status === "results") {
         return (

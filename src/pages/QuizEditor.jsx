@@ -39,7 +39,7 @@ function QuizEditor() {
             const data = err.response?.data;
 
             if (isNotQuizCreatorError(data?.message)) {
-                navigate('/dashboard', { replace: true, state: { ownerError: translateErrorResponse(data) } });
+                navigate('/dashboard', { replace: true, state: { modalError: translateErrorResponse(data) } });
                 return;
             }
 

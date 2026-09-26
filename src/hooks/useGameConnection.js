@@ -5,6 +5,7 @@ import SockJS from "sockjs-client";
 import useGameStore from "../stores/gameStore";
 import { translateMessage, extractTakenNickname } from "../utils/errorMessages";
 import useAuthStore from "../stores/authStore"
+import { saveResults } from "../utils/resultsStorage";
 
 export function useGameConnection(pinCode, { isHost = false } = {}) {
     const clientRef = useRef(null);
@@ -79,6 +80,7 @@ export function useGameConnection(pinCode, { isHost = false } = {}) {
 
                 client.subscribe(`/topic/game/${pinCode}/ended`, (msg) => {
                     const result = JSON.parse(msg.body);
+                    saveResults(pinCode, result.leaderboard);
                     setStatus('results');
                     setLeaderboard(result.leaderboard);
                 });
