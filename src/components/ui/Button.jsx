@@ -13,7 +13,7 @@ const SIZE_CLASSES = {
 };
 
 function Button({ variant = 'primary', size = 'md', icon: Icon, to, className = '', children, ...props }) {
-  const classes = `inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`;
+  const classes = `inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${VARIANT_CLASSES[variant]} ${SIZE_CLASSES[size]} ${className}`;
 
   if (to) {
     return (
