@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { User, ArrowRight, CircleAlert } from "lucide-react";
+import { User, ArrowRight, ArrowLeft, CircleAlert } from "lucide-react";
 import { joinGame } from "../api/gameApi";
 import { translateErrorResponse } from "../utils/errorMessages";
 import { savePlayer, loadSavedPlayer } from "../utils/playerStorage";
@@ -61,6 +61,10 @@ function Lobby() {
 
     return (
         <PageShell center>
+            <div className="mb-2 w-full max-w-sm">
+                <Button to="/" variant="ghost" icon={ArrowLeft} className="-ml-4">Nazad na početnu</Button>
+            </div>
+
             <Card className="w-full max-w-sm p-6 text-center">
                 <h1 className="mb-6 font-display text-2xl">Pridruži se igri</h1>
                 {prefilledTitle && <p className="mb-4 text-ink/60">Pridružuješ se: {prefilledTitle}</p>}

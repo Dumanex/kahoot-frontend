@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Plus, Pencil, Trash2, Timer as TimerIcon, CircleAlert } from 'lucide-react';
+import { Save, Plus, Pencil, Trash2, Timer as TimerIcon, CircleAlert, ArrowLeft } from 'lucide-react';
 import { getQuiz, createQuiz, updateQuiz, deleteQuestion } from '../api/quizApi';
 import { translateErrorResponse, isNotQuizCreatorError } from '../utils/errorMessages';
 import QuestionEditor from '../components/quiz/QuestionEditor';
@@ -95,6 +95,8 @@ function QuizEditor() {
 
     return (
         <PageShell>
+            <Button to="/dashboard" variant="ghost" icon={ArrowLeft} className="mb-4 -ml-4">Nazad na Dashboard</Button>
+
             <h1 className="mb-6 font-display text-2xl">{isNew ? 'Novi kviz' : 'Uredi kviz'}</h1>
 
             <Card>

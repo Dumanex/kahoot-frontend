@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Play, ArrowRight, Flag, Users, CheckCircle2, ListOrdered, CircleAlert } from "lucide-react";
+import { Play, ArrowRight, ArrowLeft, Flag, Users, CheckCircle2, ListOrdered, CircleAlert } from "lucide-react";
 import { startGame, nextQuestion, endGame } from "../api/gameApi";
 import { translateErrorResponse } from "../utils/errorMessages";
 import { everyoneScoredZero } from "../utils/ranking";
@@ -105,7 +105,10 @@ function HostGame() {
                     ) : (
                         <Podium leaderboard={leaderboard} />
                     )}
-                    <Button to={`/results/${pin}`} variant="secondary" icon={ListOrdered}>Pogledaj ceo leaderboard</Button>
+                    <div className="flex flex-wrap justify-center gap-3">
+                        <Button to={`/results/${pin}`} variant="secondary" icon={ListOrdered}>Pogledaj ceo leaderboard</Button>
+                        <Button to="/dashboard" variant="ghost" icon={ArrowLeft}>Nazad na Dashboard</Button>
+                    </div>
                 </div>
             </PageShell>
         );
@@ -133,6 +136,7 @@ function HostGame() {
                     </div>
 
                     <Button size="lg" icon={Play} onClick={handleStart} disabled={players.length === 0 || startRequested}>Počni igru</Button>
+                    <Button to="/dashboard" variant="ghost" icon={ArrowLeft}>Nazad na Dashboard</Button>
                 </div>
             </PageShell>
         );
