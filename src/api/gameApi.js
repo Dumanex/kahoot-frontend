@@ -8,3 +8,4 @@ export const getPublicGames = (q = '', page = 0) => api.get('/games/public', { p
 export const joinGame = (pin, nickname) => api.post(`/games/${pin}/join`, { nickname });
 export const rejoinGame = (pin, playerId, rejoinToken) => api.post(`/games/${pin}/rejoin`, { playerId, rejoinToken });
 export const getGameState = (pin) => api.get(`/games/${pin}/state`);
+export const getMyGames = () => api.get('/games/mine');

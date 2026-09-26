@@ -5,7 +5,8 @@ import useAuthStore from "../stores/authStore";
 import { deleteQuiz, getQuizzes } from "../api/quizApi";
 import QuizCard from "../components/quiz/QuizCard";
 import useGameStore from "../stores/gameStore";
-import { createSession } from "../api/gameApi";
+import { createSession, getMyGames } from "../api/gameApi";
+import { ActiveGames, GameHistory } from "../components/game/HostGames";
 import PageShell from "../components/layout/PageShell";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -14,7 +15,9 @@ import Modal from "../components/ui/Modal";
 function Dashboard() {
     const location = useLocation();
     const [quizzes, setQuizzes] = useState([]);
+    const [games, setGames] = useState([]);
     const [error, setError] = useState('');
+    const [gamesError, setGamesError] = useState('');
     const [modalError, setModalError] = useState(location.state?.modalError || '');
     const [hosting, setHosting] = useState(false);
     const logout = useAuthStore((state) => state.logout);
@@ -25,6 +28,10 @@ function Dashboard() {
         getQuizzes()
             .then((response) => setQuizzes(response.data.content))
             .catch(() => setError("Neuspešno učitavanje kvizova"));
+
+        getMyGames()
+            .then((response) => setGames(response.data))
+            .catch(() => setGamesError("Neuspešno učitavanje partija"));
     }, []);
 
     const handleDelete = async (id) => {
@@ -58,7 +65,7 @@ function Dashboard() {
             </Modal>
 
             <div className="mb-6 flex items-center justify-between">
-                <h1 className="font-display text-2xl">Moji kvizovi</h1>
+                <h1 className="font-display text-2xl">Dashboard</h1>
                 <Button variant="ghost" icon={LogOut} onClick={logout}>Odjavi se</Button>
             </div>
 
@@ -66,6 +73,17 @@ function Dashboard() {
                 <Button to="/quiz/new" icon={Plus}>Napravi novi kviz</Button>
                 <Button to="/" variant="secondary" icon={HomeIcon}>Početna</Button>
             </div>
+
+            {gamesError && (
+                <p className="mb-4 flex items-center gap-2 text-sm text-rust">
+                    <CircleAlert size={16} />
+                    {gamesError}
+                </p>
+            )}
+
+            <ActiveGames games={games.filter((game) => game.status !== 'COMPLETED')} />
+
+            <h2 className="mb-4 text-lg font-semibold">Moji kvizovi</h2>
 
             {error && (
                 <p className="mb-4 flex items-center gap-2 text-sm text-rust">
@@ -86,6 +104,8 @@ function Dashboard() {
                     ))}
                 </div>
             )}
+
+            <GameHistory games={games.filter((game) => game.status === 'COMPLETED')} />
         </PageShell>
     );
 }
