@@ -11,11 +11,14 @@ import PageShell from "../components/layout/PageShell";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
+import Spinner from "../components/ui/Spinner";
 
 function Dashboard() {
     const location = useLocation();
     const [quizzes, setQuizzes] = useState([]);
     const [games, setGames] = useState([]);
+    const [quizzesLoading, setQuizzesLoading] = useState(true);
+    const [gamesLoading, setGamesLoading] = useState(true);
     const [error, setError] = useState('');
     const [gamesError, setGamesError] = useState('');
     const [modalError, setModalError] = useState(location.state?.modalError || '');
@@ -27,11 +30,13 @@ function Dashboard() {
     useEffect(() => {
         getQuizzes()
             .then((response) => setQuizzes(response.data.content))
-            .catch(() => setError("Neuspešno učitavanje kvizova"));
+            .catch(() => setError("Neuspešno učitavanje kvizova"))
+            .finally(() => setQuizzesLoading(false));
 
         getMyGames()
             .then((response) => setGames(response.data))
-            .catch(() => setGamesError("Neuspešno učitavanje partija"));
+            .catch(() => setGamesError("Neuspešno učitavanje partija"))
+            .finally(() => setGamesLoading(false));
     }, []);
 
     const handleDelete = async (id) => {
@@ -92,20 +97,26 @@ function Dashboard() {
                 </p>
             )}
 
-            {quizzes.length === 0 ? (
-                <Card className="flex items-center gap-2 text-ink/50">
-                    <FileQuestion size={18} />
-                    <span>Nemaš još nijedan kviz</span>
-                </Card>
-            ) : (
+            {quizzesLoading ? (
+                <div className="flex justify-center py-6">
+                    <Spinner />
+                </div>
+            ) : quizzes.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {quizzes.map((quiz) => (
                         <QuizCard key={quiz.id} quiz={quiz} onDelete={handleDelete} onHost={handleHost} hostDisabled={hosting} />
                     ))}
                 </div>
+            ) : !error && (
+                <Card className="flex items-center gap-2 text-ink/50">
+                    <FileQuestion size={18} />
+                    <span>Nemaš još nijedan kviz</span>
+                </Card>
             )}
 
-            <GameHistory games={games.filter((game) => game.status === 'COMPLETED')} />
+            {!gamesLoading && !gamesError && (
+                <GameHistory games={games.filter((game) => game.status === 'COMPLETED')} />
+            )}
         </PageShell>
     );
 }
