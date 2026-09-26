@@ -144,7 +144,7 @@ function QuizEditor() {
                     </div>
 
                     <div className="flex flex-col gap-3">
-                        {questions.map((q) => (
+                        {questions.map((q, index) => (
                         editingQuestion === q ? (
                             <QuestionEditor
                             key={q.id}
@@ -158,7 +158,7 @@ function QuizEditor() {
                             <Card key={q.id} className="flex flex-col gap-2">
                                 <div className="flex items-center justify-between gap-4">
                                     <div className="flex items-center gap-3">
-                                        <Badge>{q.orderIndex + 1}</Badge>
+                                        <Badge>{index + 1}</Badge>
                                         <span>{q.questionText}</span>
                                         <Badge tone="neutral">{q.questionType}</Badge>
                                     </div>
@@ -182,7 +182,7 @@ function QuizEditor() {
                         <QuestionEditor
                             quizId={id}
                             question={null}
-                            orderIndex={questions.length}
+                            orderIndex={questions.reduce((max, q) => Math.max(max, q.orderIndex + 1), 0)}
                             onSaved={handleQuestionSaved}
                             onCancel={() => setEditingQuestion(null)}
                         />

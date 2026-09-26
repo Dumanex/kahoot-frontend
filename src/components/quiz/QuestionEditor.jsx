@@ -31,13 +31,15 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
     const [submitting, setSubmitting] = useState(false);
 
     const handleTypeChange = (newType) => {
-      setQuestionType(newType);
       if (newType === 'TRUE_FALSE') {
         setAnswers([
           { answerText: 'Tačno', isCorrect: true },
           { answerText: 'Netačno', isCorrect: false }
         ]);
+      } else if (questionType === 'TRUE_FALSE') {
+        setAnswers(emptyAnswers(2));
       }
+      setQuestionType(newType);
     };
 
     const handleTextChange = (index, text) => {
@@ -94,8 +96,8 @@ function QuestionEditor({quizId, question, orderIndex, onSaved, onCancel}) {
             questionType,
             questionText,
             timeLimitSeconds: Number(timeLimitSeconds),
-            imageUrl: imageUrl || undefined,
-            audioUrl: audioUrl || undefined,
+            imageUrl: questionType === 'IMAGE_RECOGNITION' ? imageUrl || undefined : undefined,
+            audioUrl: questionType === 'AUDIO' ? audioUrl || undefined : undefined,
             orderIndex,
             answers: answers.map((a, i) => ({
                 id: a.id || undefined,
