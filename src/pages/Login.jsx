@@ -42,6 +42,7 @@ function Login() {
                     <Input
                         icon={User}
                         placeholder="Korisničko ime"
+                        autoComplete="username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
@@ -51,6 +52,7 @@ function Login() {
                         icon={Lock}
                         type="password"
                         placeholder="Lozinka"
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required

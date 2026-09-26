@@ -43,6 +43,7 @@ function Register() {
           <Input
             icon={User}
             placeholder="Korisničko ime"
+            autoComplete="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
@@ -51,6 +52,7 @@ function Register() {
             icon={Mail}
             type="email"
             placeholder="Email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -59,6 +61,7 @@ function Register() {
             icon={Lock}
             type="password"
             placeholder="Lozinka"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

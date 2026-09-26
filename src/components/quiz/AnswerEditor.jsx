@@ -22,7 +22,9 @@ function AnswerEditor({ answer, index, onTextChange, onMarkCorrect, onRemove, ca
           <button
             type="button"
             onClick={() => onRemove(index)}
-            className="text-ink/40 hover:text-rust"
+            aria-label={`Ukloni odgovor ${index + 1}`}
+            title={`Ukloni odgovor ${index + 1}`}
+            className="cursor-pointer text-ink/40 hover:text-rust"
           >
             <Trash2 size={16} />
           </button>
