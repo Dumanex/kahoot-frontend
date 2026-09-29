@@ -11,7 +11,7 @@ function QuestionDisplay({question, phase}) {
             {question.audioUrl && phase === 'answering' && (
                 <div className="flex items-center gap-2 text-ink/60">
                     <Volume2 size={18} />
-                    <audio key={question.id} src={question.audioUrl} autoPlay />
+                    <audio key={question.id} src={question.audioUrl} autoPlay controls />
                 </div>
             )}
         </Card>
