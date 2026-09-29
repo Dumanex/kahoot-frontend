@@ -1,8 +1,111 @@
 # Postavljanje u produkciju
 
-> **Napomena:** aplikacija još nije postavljena u produkciju. Ovo je generički postupak za isti Linux server (VPS) na kome radi backend po [backend DEPLOYMENT.md](https://github.com/Dumanex/kahoot-backend/blob/main/DEPLOYMENT.md). Build sa produkcionim URL-om i serviranje build-a (koraci 3 i 4, i provere iz koraka 7 koje se mogu uraditi lokalno) su provereni lokalno. Instalacija Node.js-a na serveru, Nginx, HTTPS i rad na pravom domenu nisu testirani na pravom serveru.
+Frontend je posle build-a skup **statičkih fajlova** (HTML, JS, CSS) u folderu `dist/`. Za njega nije potreban poseban kontejner ni Node.js proces koji stalno radi, dovoljan je bilo koji hosting za statičke fajlove.
 
-Frontend je posle build-a skup **statičkih fajlova** (HTML, JS, CSS) u folderu `dist/`. Na serveru ih servira **Nginx**, isti onaj koji je u koraku 6 backend uputstva postavljen kao reverse proxy za API. Za frontend nije potreban poseban kontejner ni Node.js proces koji stalno radi.
+Postoje dve varijante, iste kao u [backend DEPLOYMENT.md](https://github.com/Dumanex/kahoot-backend/blob/main/DEPLOYMENT.md):
+
+- **[Varijanta A: Vercel](#varijanta-a-vercel)** je **trenutno korišćena i testirana**. Frontend je na Vercel-u, a backend na laptopu iza Tailscale Funnel-a (backend varijanta A). Besplatno je i ne treba ni domen ni server.
+- **[Varijanta B: Linux server (VPS) sa Nginx-om](#varijanta-b-linux-server-vps-sa-nginx-om)** je generički postupak za isti server na kome radi backend po backend varijanti B. **Nije testirana** na pravom serveru.
+
+---
+
+## Varijanta A: Vercel
+
+> **Testirano 29.09.2026.**
+
+Trenutne adrese:
+
+| Deo | Adresa |
+|---|---|
+| Frontend | `https://kahoot-frontend-three.vercel.app` |
+| Backend | `https://kahoot-quiz.taild913ec.ts.net` |
+
+**Uslov:** backend mora biti postavljen po backend varijanti A i dostupan na HTTPS adresi. Dok se aplikacija koristi, laptop sa backendom mora biti upaljen, na internetu i bez sleep-a.
+
+### A1. Šta je u kodu već pripremljeno
+
+- Adresa backenda se čita iz `VITE_API_URL` u `src/api/axios.js`. REST ide na `VITE_API_URL/api`, a SockJS na `VITE_API_URL/ws`, sa šemom `https://` (ne `wss://`, SockJS sam bira transport).
+- `vercel.json` u korenu repoa preusmerava svaku putanju koja nije fajl na `index.html`.
+  ```json
+  {
+      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  }
+  ```
+- `define: { global: 'globalThis' }` u `vite.config.js` je potreban zbog `sockjs-client`. Bez njega build prolazi, ali stranica pukne u browseru.
+- Linkovi `imageUrl` / `audioUrl` iz backend odgovora su već puni URL-ovi (backend ih pravi od `UPLOAD_BASE_URL`), pa ih frontend koristi tačno kako stignu.
+
+### A2. Postavljanje na Vercel
+
+1. Kod mora biti na GitHub-u (`kahoot-frontend`), uključujući `vercel.json`. Vercel pravi build iz GitHub-a, ne sa lokalnog diska.
+2. Na https://vercel.com se prijaviti preko GitHub-a, pa *Add New → Project* i *Import* pored `kahoot-frontend`.
+3. Podešavanja:
+
+   | Polje | Vrednost |
+   |---|---|
+   | Framework Preset | Vite |
+   | Build Command | `npm run build` (popunjava se samo) |
+   | Output Directory | `dist` (popunjava se samo) |
+   | Environment Variables | `VITE_API_URL` = `https://kahoot-quiz.taild913ec.ts.net`, **bez `/` na kraju** |
+
+4. *Deploy*. Posle 1–2 minuta projekat dobija adresu tipa `https://<projekat>.vercel.app`. Ime se po želji menja u *Settings → Domains*, i to **pre** sledećeg koraka.
+5. Production adresu upisati u `CORS_ALLOWED_ORIGINS` u backend `.env` (sa `https://`, bez `/` na kraju), pa na backendu pokrenuti `docker compose --profile prod up -d` (backend korak A2 i A3).
+
+> Preview adrese koje Vercel pravi za pojedinačne deploy-e (`...-git-...vercel.app`) nisu u CORS-u backenda i na njima prijava i igra ne rade. Koristi se samo production adresa.
+
+### A3. Ažuriranje na novu verziju
+
+Svaki `git push` na `main` granu Vercel sam primeti i uradi novi build i deploy.
+
+Provera da je deploy prošao: na vercel.com otvoriti projekat, pa tab *Deployments*. Na vrhu liste treba da bude poslednji commit (poruka i kratki hash) sa statusom *Ready* i oznakom *Production*. Dok build traje, status je *Building*.
+
+> `VITE_API_URL` se **ugrađuje u JavaScript pri build-u**. Posle promene vrednosti u *Settings → Environment Variables* potrebno je *Deployments → ⋯ → Redeploy*, inače sajt i dalje koristi staru adresu. U ovu varijablu se ne upisuju tajne, jer svako može da je pročita u browseru.
+
+### A4. Provera
+
+Sa bilo kog računara:
+
+```bash
+F=https://kahoot-frontend-three.vercel.app
+curl -s -o /dev/null -w '%{http_code}\n' $F/               # očekivano: 200
+curl -s -o /dev/null -w '%{http_code}\n' $F/play/123456    # očekivano: 200 (vercel.json rewrite)
+```
+
+CORS za Vercel adresu (očekivano `200` i `Access-Control-Allow-Origin: https://kahoot-frontend-three.vercel.app`):
+
+```bash
+curl -s -o /dev/null -D - -X OPTIONS \
+  -H 'Origin: https://kahoot-frontend-three.vercel.app' \
+  -H 'Access-Control-Request-Method: POST' \
+  https://kahoot-quiz.taild913ec.ts.net/api/auth/login
+```
+
+U DevTools-u (F12 → *Network*) zahtevi idu na `https://kahoot-quiz.taild913ec.ts.net/api/...`, a u *Console* nema CORS ni *mixed content* grešaka.
+
+### A5. Zvuk na telefonu
+
+Browseri ne dozvoljavaju da stranica sama pusti zvuk ako korisnik malo pre toga nije dodirnuo stranicu. Pitanje stiže preko WebSocket-a, a ne posle dodira, pa mobilni browseri zvuk tiho blokiraju. Na iPhone-u ovo važi za **sve** browsere, i za Chrome, jer na iOS-u svi koriste Safari-jev WebKit. Browser pritom ne traži dozvolu, jer dozvola za zvučnik ne postoji.
+
+Zato audio pitanje ima plejer sa kontrolama (`QuestionDisplay.jsx`). Na računaru zvuk kreće sam, a na telefonu igrač dodirne *Play*.
+
+### A6. Rešavanje problema
+
+| Simptom | Uzrok i rešenje |
+|---|---|
+| CORS greška ili WebSocket `403` | Vercel adresa nije u `CORS_ALLOWED_ORIGINS` backenda, nema `https://` ili se koristi preview adresa (A2, korak 5) |
+| U *Network* tabu zahtevi idu na `http://localhost:8080` | `VITE_API_URL` nije postavljen u Vercel-u. Dodati ga i uraditi *Redeploy* |
+| Promena `VITE_API_URL` nema efekta | Nije urađen *Redeploy* (A3) |
+| *Mixed Content* greška u konzoli | `VITE_API_URL` ili link slike počinje sa `http://`. Frontend na `https://` ne sme da zove `http://` adrese |
+| Neke slike ili zvuk se ne prikazuju, a nova pitanja rade | Pitanje je napravljeno dok je `UPLOAD_BASE_URL` bio `http://localhost:8080`, pa je u bazi stari link. Ponovo otpremiti fajl u editoru ili prepraviti linkove (backend korak A4) |
+| Zvuk na telefonu ne kreće sam | Očekivano ponašanje mobilnih browsera (A5). Pustiti ga preko plejera |
+| Sve je radilo, pa odjednom ništa ne radi | Laptop sa backendom je ugašen, uspavan ili bez interneta. Proveriti backend varijantu A |
+
+---
+
+## Varijanta B: Linux server (VPS) sa Nginx-om
+
+> **Napomena:** ova varijanta nije testirana na pravom serveru. Build sa produkcionim URL-om i serviranje build-a (koraci 3 i 4, i provere iz koraka 7 koje se mogu uraditi lokalno) su provereni lokalno. Instalacija Node.js-a na serveru, Nginx, HTTPS i rad na pravom domenu nisu.
+
+Na serveru statičke fajlove servira **Nginx**, isti onaj koji je u koraku 6 backend uputstva (varijanta B) postavljen kao reverse proxy za API.
 
 Primer koristi iste izmišljene domene kao backend uputstvo:
 
@@ -11,7 +114,7 @@ Primer koristi iste izmišljene domene kao backend uputstvo:
 | Frontend | `https://kviz.example.com` | Nginx servira fajlove iz `dist/` |
 | Backend | `https://api.kviz.example.com` | Nginx prosleđuje na backend kontejner (port 8080) |
 
-## Sadržaj
+### Sadržaj
 
 0. [Preduslov: postavljen backend](#0-preduslov-postavljen-backend)
 1. [Priprema servera](#1-priprema-servera)
@@ -26,7 +129,7 @@ Primer koristi iste izmišljene domene kao backend uputstvo:
 
 ## 0. Preduslov: postavljen backend
 
-Pre frontenda na serveru treba da budu završeni svi koraci iz [backend DEPLOYMENT.md](https://github.com/Dumanex/kahoot-backend/blob/main/DEPLOYMENT.md), **uključujući korak 6** (Nginx, Certbot i domen `api.kviz.example.com`). Posle toga na serveru već postoje Docker, Git, Nginx, Certbot i otvoreni portovi 80 i 443.
+Pre frontenda na serveru treba da budu završeni svi koraci iz backend varijante B, **uključujući korak 6** (Nginx, Certbot i domen `api.kviz.example.com`). Posle toga na serveru već postoje Docker, Git, Nginx, Certbot i otvoreni portovi 80 i 443.
 
 Provera sa servera:
 
@@ -180,15 +283,7 @@ curl -s -o /dev/null -D - -X OPTIONS \
   https://api.kviz.example.com/api/auth/login
 ```
 
-U browseru, na `https://kviz.example.com`:
-1. Registrovati se. Posle registracije se otvara Dashboard.
-2. Napraviti kviz sa jednim pitanjem sa slikom i proveriti da se slika prikazuje.
-3. Kliknuti *Host*. Otvara se ekran sa PIN-om.
-4. Na telefonu ili u privatnom prozoru otvoriti `https://kviz.example.com`, ući sa PIN-om i nadimkom. Igrač treba odmah da se pojavi na ekranu hosta.
-5. Pokrenuti igru i odgovoriti. Host vidi broj odgovora, a igrač rezultat posle zatvaranja pitanja.
-6. Osvežiti stranicu kod igrača usred igre. Igrač nastavlja partiju.
-
-U DevTools-u (F12 → *Network*):
+U browseru, na `https://kviz.example.com`, proći iste korake kao u [A4](#a4-provera). U DevTools-u (F12 → *Network*):
 - zahtevi idu na `https://api.kviz.example.com/api/...`, ne na `localhost`
 - postoji zahtev ka `https://api.kviz.example.com/ws/.../websocket` sa statusom `101 Switching Protocols`
 - u *Console* nema CORS ni *mixed content* grešaka
