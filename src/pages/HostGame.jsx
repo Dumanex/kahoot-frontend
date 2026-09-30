@@ -45,9 +45,34 @@ function HostGame() {
     }, [phase, currentQuestion?.id]);
 
     useEffect(() => {
-        const timeout = setTimeout(() => handleNext, 5000);
-        return () => clearTimeout(timeout);
+        if (phase !== 'stats' || nextRequestedFor === currentQuestion?.id) {
+            startInterval(runTask, 5000);
+        }
     });
+
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    async function runTask() {
+    // Your async code here
+        console.log('Task started');
+        await new Promise((r) => setTimeout(r, 1000)); // Simulating async work
+        console.log('Task finished');
+    }
+
+    async function startInterval(fn, ms) {
+        while (true) {
+            try {
+            await fn();
+            } catch (error) {
+            console.error('Error in interval:', error);
+            }
+            await sleep(ms);
+        }
+    }
+
+    if (currentQuestion && status === 'stats') {
+        startInterval(runTask, 3000);
+    }
 
     const handleStart = async () => {
         setError('');
