@@ -44,6 +44,11 @@ function HostGame() {
         }
     }, [phase, currentQuestion?.id]);
 
+    useEffect(() => {
+        const timeout = setTimeout(() => handleNext, 5000);
+        return () => clearTimeout(timeout);
+    });
+
     const handleStart = async () => {
         setError('');
         useGameStore.setState({ serverError: '' });
