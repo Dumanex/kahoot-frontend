@@ -46,8 +46,8 @@ function HostGame() {
 
     useEffect(() => {
         if (phase !== 'stats' || !currentQuestion || nextRequestedFor === currentQuestion.id) return;
-        const timeoutId = setTimeout(handleNext, 5000);
-        return () => clearTimeout(timeoutId);
+        const timeoutId = setInterval(handleNext, 5000);
+        return () => clearInterval(timeoutId);
     }, [phase, currentQuestion?.id, nextRequestedFor]);
 
     const handleStart = async () => {
