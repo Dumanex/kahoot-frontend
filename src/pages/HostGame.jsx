@@ -42,12 +42,10 @@ function HostGame() {
         if (phase === 'stats' && currentQuestion) {
             finalizeQuestion();
         }
-    }, [phase, currentQuestion?.id]);
 
-    useEffect(() => {
         if (phase !== 'stats' || !currentQuestion || nextRequestedFor === currentQuestion.id) return;
-        const timeoutId = setInterval(handleNext, 5000);
-        return () => clearInterval(timeoutId);
+        const timeoutId = setTimeout(handleNext, 5000);
+        return () => clearTimeout(timeoutId);
     }, [phase, currentQuestion?.id, nextRequestedFor]);
 
     const handleStart = async () => {
